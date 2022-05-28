@@ -1,11 +1,11 @@
 // ICS53 - Assignment 5 Exercises
 
-//#include <netinet/in.h>
-//#include <stdio.h>
-//#include <stdlib.h>
-//#include <string.h>
-//#include <sys/socket.h>
-//#include <unistd.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
 #define PORT 9999
 
 // Sending and receiving a simple message.
