@@ -77,7 +77,6 @@ int server_example_3(client_socket, server_socket){
         total_bytes = total_bytes + sent_bytes;
 
         printf("Server: sent to client %i bytes. Total bytes sent so far = %i.\n", sent_bytes, total_bytes);
-
     }
     close(client_socket);
     close(server_socket);

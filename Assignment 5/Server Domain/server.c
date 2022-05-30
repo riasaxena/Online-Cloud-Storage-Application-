@@ -88,7 +88,7 @@ int start_server()
         exit(EXIT_FAILURE);
     }
 
-
+    
     ///////////// Start sending and receiving process //////////////
 	
     // server_exec(client_socket, server_socket);

@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include "Md5.c"  // Feel free to include any other .c files that you need in the 'Client Domain'.
 #define PORT 9999
+
 // int client_exec(client_socket){
 //     int received_size;
 //     char destination_path[] = "/Local Directory/user_command.txt";  // Note how we don't have the original file name.
@@ -50,7 +51,7 @@ int start_client(char inputFile[], char ipAddress[])
         printf("\n Socket creation error \n");
         return -1;
     }
-
+    
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(PORT);
 
@@ -70,9 +71,31 @@ int start_client(char inputFile[], char ipAddress[])
     // client_exec(client_socket);
     close(client_socket);
     return 0;
-
-
 }
+
+//upload file from local directory to remote directory
+void upload(char file) {
+    int err,n;
+    unsigned char buffer[4096];
+    // FILE *file;
+    //if file exists, open file and read file
+    if (file = fopen(file, "r")) {
+        //TODO: open remote directory??
+        //write file from local to remote
+        while (1) {
+            err = read(file, buffer, 4096);
+            //file is not found
+            if (err = -1) {
+                //print error message
+                print("File %s could not be uploaded successfully", file);
+            }
+            //write file to the remote directory
+            err = write("Remote Directory", buffer, n);
+        }
+
+    }
+}
+
 int main(int argc, char *argv[])
 {
 
@@ -81,7 +104,7 @@ int main(int argc, char *argv[])
 	printf("My server IP address: %s\n", argv[2]);
 	md5_print();
 	printf("-----------\n");
-	start_client(argv[1], argv[2]); 
+	start_client(argv[1], argv[2]);
 	exit(0);
 	return 0;
 }
