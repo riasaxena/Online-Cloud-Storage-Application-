@@ -7,9 +7,30 @@
 #include <stdlib.h>
 #include "Md5.c"  // Feel free to include any other .c files that you need in the 'Client Domain'.
 #define PORT 9999
-int client_example_3(client_socket){
+void upload(char file) {
+     int err,n;
+     unsigned char buffer[4096];
+     // FILE *file;
+     //if file exists, open file and read file
+     if (file = fopen(file, "r")) {
+         //TODO: open remote directory??
+         //write file from local to remote
+         while (1) {
+             err = read(file, buffer, 4096);
+             //file is not found
+             if (err = -1) {
+                 //print error message
+                 print("File %s could not be uploaded successfully", file);
+             }
+             //write file to the remote directory
+             err = write("Remote Directory", buffer, n);
+         }
+
+     }
+ }
+int download(int client_socket, char destination_path[]){
     int received_size;
-    char destination_path[] = "Local Directory/client_file.txt";  // Note how we don't have the original file name.
+    // char destination_path[] = "Local Directory/client_file.txt";  // Note how we don't have the original file name.
     int chunk_size = 1000;
     char file_chunk[chunk_size];
 //    int chunk_counter = 0;
@@ -41,6 +62,40 @@ int client_example_3(client_socket){
     }
 }
 void readFile(FILE *input_file) {
+
+     FILE *input_file = fopen("user_commands.txt", "r");
+     // char line[500];
+     char line = "download";
+     //reads the file line by line
+    //  while (fgets(line, sizeof(line), input_file)) {
+         //extracts first token in line (i.e. the command)
+        char *token = strtok(line, " ");
+        printf("%s", token); 
+         //send different message for each command 
+        //  if (token == "append") {
+        //      //send and receive an entire file
+        //      //send_append(client_socket, file)
+        //  }
+        //  else if (token == "upload") {
+        //      //send_upload(client_socket, file)
+        //  }
+        //  else if (token == "download") {
+        //      //send_download(client_socket, file)
+        //     printf("download\n"); 
+        //  }
+        //  else if (token == "delete") {
+        //      //send_delete(client_socket, file)
+        //  }
+        //  else if (token == "syncheck") {
+        //      //send_append(client_socket, file)
+        //  }
+        //  else if (token == "quit") {
+        //      //quit
+        //  }
+     // }
+ }
+int start_client(char const* const fileName, char ipAddress[])
+
     FILE *input_file = fopen("user_commands.txt", "r");
     // char line[500];
     char line = "download";
@@ -72,6 +127,7 @@ void readFile(FILE *input_file) {
 }
 
 int start_client(char inputFile[], char ipAddress[])
+
 {
     int client_socket;
     struct sockaddr_in serv_addr;
@@ -100,12 +156,20 @@ int start_client(char inputFile[], char ipAddress[])
     ///////////// Start sending and receiving process //////////////
     char message[] = "download server_file.txt"; 
     send(client_socket, message, strlen(message), 0);
+
+    download(client_socket, "Local Directory/client_file.txt");
+
     client_example_3(client_socket);
 
     FILE *input_file = fopen("user_commands.txt", "r");
     readFile(input_file); 
+
     close(client_socket);
+    FILE *input_file = fopen(fileName, "r");
+    readFile(input_file);
     
+
+
     return 0;
 }
 
@@ -141,7 +205,12 @@ int main(int argc, char *argv[])
 	printf("My server IP address: %s\n", argv[2]);
 	md5_print();
 	printf("-----------\n");
+
+    char const* const fileName = "user_command.txt";
+	start_client(fileName, argv[2]); 
+
 	start_client(argv[1], argv[2]);
+
 	exit(0);
 	return 0;
 }
