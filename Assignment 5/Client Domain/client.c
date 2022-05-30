@@ -49,23 +49,23 @@ void readFile(FILE *input_file) {
         //extracts first token in line (i.e. the command)
         char *token = strtok(line, " ");
         //send different message for each command 
-        if (token = "append") {
+        if (strcmp(token, "append")) {
             //send and receive an entire file
             //send_append(client_socket, file)
         }
-        else if (token = "upload") {
+        else if (strcmp(token, "upload")) {
             //send_upload(client_socket, file)
         }
-        else if (token = "download") {
+        else if (strcmp(token, "download")) {
             //send_download(client_socket, file)
         }
-        else if (token = "delete") {
+        else if (strcmp(token, "delete")) {
             //send_delete(client_socket, file)
         }
-        else if (token = "syncheck") {
+        else if (strcmp(token, "syncheck")) {
             //send_append(client_socket, file)
         }
-        else if (token = "quit") {
+        else if (strcmp(token, "quit")) {
             //quit
         }
     // }
