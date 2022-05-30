@@ -91,17 +91,6 @@ int start_server()
 
     ///////////// Start sending and receiving process //////////////
     char buffer[1024];
-    // printf("1\n"); 
-    // while (1){
-        
-    //     recv(client_socket, buffer, 1024, 0);
-    //     printf("%s", buffer); 
-    //     if (strncmp(buffer, "exit", 4)){
-
-    //         break; 
-    //     }
-        
-    // }
     recv(client_socket, buffer, 1024, 0);
     download(client_socket, server_socket, "Remote Directory/server_file.txt"); 
     close(client_socket);
