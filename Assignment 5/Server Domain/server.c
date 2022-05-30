@@ -92,7 +92,10 @@ int start_server()
     ///////////// Start sending and receiving process //////////////
     char buffer[1024];
     recv(client_socket, buffer, 1024, 0);
-    download(client_socket, server_socket, "Remote Directory/server_file.txt"); 
+    if (strncmp(buffer, "download", 8) == 0){
+        download(client_socket, server_socket, "Remote Directory/server_file.txt"); 
+    }
+    
     close(client_socket);
     close(server_socket);
     return 0;
