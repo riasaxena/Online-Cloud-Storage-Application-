@@ -7,39 +7,39 @@
 #include <stdlib.h>
 #include "Md5.c"  // Feel free to include any other .c files that you need in the 'Client Domain'.
 #define PORT 9999
-// int client_exec(client_socket){
-//     int received_size;
-//     char destination_path[] = "/Local Directory/user_command.txt";  // Note how we don't have the original file name.
-//     int chunk_size = 1000;
-//     char file_chunk[chunk_size];
-// //    int chunk_counter = 0;
+int client_example_3(client_socket){
+    int received_size;
+    char destination_path[] = "Local Directory/client_file.txt";  // Note how we don't have the original file name.
+    int chunk_size = 1000;
+    char file_chunk[chunk_size];
+//    int chunk_counter = 0;
 
-//     FILE *fptr;
+    FILE *fptr;
 
-//     // Opening a new file in write-binary mode to write the received file bytes into the disk using fptr.
-//     fptr = fopen(destination_path,"wb");
+    // Opening a new file in write-binary mode to write the received file bytes into the disk using fptr.
+    fptr = fopen(destination_path,"wb");
 
-//     // Keep receiving bytes until we receive the whole file.
-//     while (1){
-//         bzero(file_chunk, chunk_size);
-// //        memset(&file_chunk, 0, chunk_size);
+    // Keep receiving bytes until we receive the whole file.
+    while (1){
+        bzero(file_chunk, chunk_size);
+//        memset(&file_chunk, 0, chunk_size);
 
-//         // Receiving bytes from the socket.
-//         received_size = recv(client_socket, file_chunk, chunk_size, 0);
-//         printf("Client: received %i bytes from server.\n", received_size);
+        // Receiving bytes from the socket.
+        received_size = recv(client_socket, file_chunk, chunk_size, 0);
+        printf("Client: received %i bytes from server.\n", received_size);
 
-//         // The server has closed the connection.
-//         // Note: the server will only close the connection when the application terminates.
-//         if (received_size == 0){
-//             close(client_socket);
-//             fclose(fptr);
-//             break;
-//         }
-//         // Writing the received bytes into disk.
-//         fwrite(&file_chunk, sizeof(char), received_size, fptr);
-// //        printf("Client: file_chunk data is:\n%s\n\n", file_chunk);
-//     }
-// }
+        // The server has closed the connection.
+        // Note: the server will only close the connection when the application terminates.
+        if (received_size == 0){
+            close(client_socket);
+            fclose(fptr);
+            break;
+        }
+        // Writing the received bytes into disk.
+        fwrite(&file_chunk, sizeof(char), received_size, fptr);
+//        printf("Client: file_chunk data is:\n%s\n\n", file_chunk);
+    }
+}
 int start_client(char inputFile[], char ipAddress[])
 {
     int client_socket;
@@ -67,12 +67,16 @@ int start_client(char inputFile[], char ipAddress[])
     }
 
     ///////////// Start sending and receiving process //////////////
-    // client_exec(client_socket);
+    char message[] = "download server_file.txt"; 
+    send(client_socket, message, strlen(message), 0);
+    client_example_3(client_socket);
     close(client_socket);
+    
     return 0;
 
 
 }
+
 int main(int argc, char *argv[])
 {
 

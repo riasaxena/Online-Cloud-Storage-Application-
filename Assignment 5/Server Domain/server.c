@@ -7,45 +7,45 @@
 #include <unistd.h>
 #include "Md5.c"  // Feel free to include any other .c files that you need in the 'Server Domain'.
 #define PORT 9999
-// int server_exec(client_socket, server_socket){
-//     FILE *fptr;
-//     int chunk_size = 1000;
-//     char file_chunk[chunk_size];
-//     char source_path[] = "/Remote Directory/server_file.txt";
+int server_example_3(client_socket, server_socket){
+    FILE *fptr;
+    int chunk_size = 1000;
+    char file_chunk[chunk_size];
+    char source_path[] = "Remote Directory/server_file.txt";
+    fptr = fopen(source_path,"rb");  // Open a file in read-binary mode.
+    fseek(fptr, 0L, SEEK_END);  // Sets the pointer at the end of the file.
+    int file_size = ftell(fptr);  // Get file size.
+    printf("Server: file size = %i bytes\n", file_size);
+    fseek(fptr, 0L, SEEK_SET);  // Sets the pointer back to the beginning of the file.
 
-//     fptr = fopen(source_path,"rb");  // Open a file in read-binary mode.
-//     fseek(fptr, 0L, SEEK_END);  // Sets the pointer at the end of the file.
-//     int file_size = ftell(fptr);  // Get file size.
-//     printf("Server: file size = %i bytes\n", file_size);
-//     fseek(fptr, 0L, SEEK_SET);  // Sets the pointer back to the beginning of the file.
+    int total_bytes = 0;  // Keep track of how many bytes we read so far.
+    int current_chunk_size;  // Keep track of how many bytes we were able to read from file (helpful for the last chunk).
+    ssize_t sent_bytes;
 
-//     int total_bytes = 0;  // Keep track of how many bytes we read so far.
-//     int current_chunk_size;  // Keep track of how many bytes we were able to read from file (helpful for the last chunk).
-//     ssize_t sent_bytes;
-//     while (total_bytes < file_size){
-//         // Clean the memory of previous bytes.
-//         // Both 'bzero' and 'memset' works fine.
-//         // bzero(file_chunk, chunk_size);
-//         memset(file_chunk, '\0', chunk_size);
+    while (total_bytes < file_size){
+        // Clean the memory of previous bytes.
+        // Both 'bzero' and 'memset' works fine.
+        bzero(file_chunk, chunk_size);
+//        memset(file_chunk, '\0', chunk_size);
 
-//         // Read file bytes from file.
-//         current_chunk_size = fread(&file_chunk, sizeof(char), chunk_size, fptr);
+        // Read file bytes from file.
+        current_chunk_size = fread(&file_chunk, sizeof(char), chunk_size, fptr);
 
-//         // Sending a chunk of file to the socket.
-//         sent_bytes = send(client_socket, &file_chunk, current_chunk_size, 0);
+        // Sending a chunk of file to the socket.
+        sent_bytes = send(client_socket, &file_chunk, current_chunk_size, 0);
 
-//         // Keep track of how many bytes we read/sent so far.
-// //        total_bytes = total_bytes + current_chunk_size;
-//         total_bytes = total_bytes + sent_bytes;
+        // Keep track of how many bytes we read/sent so far.
+//        total_bytes = total_bytes + current_chunk_size;
+        total_bytes = total_bytes + sent_bytes;
 
-//         printf("Server: sent to client %i bytes. Total bytes sent so far = %i.\n", sent_bytes, total_bytes);
+        printf("Server: sent to client %i bytes. Total bytes sent so far = %i.\n", sent_bytes, total_bytes);
 
-//     }
-//     close(client_socket);
-//     close(server_socket);
-//     fclose(fptr);
-//     return 0;
-// }
+    }
+    // close(client_socket);
+    // close(server_socket);
+    fclose(fptr);
+    return 0;
+}
 int start_server()
 {
     int client_socket, server_socket;
@@ -90,13 +90,17 @@ int start_server()
 
 
     ///////////// Start sending and receiving process //////////////
-	
-    // server_exec(client_socket, server_socket);
-    // close(client_socket);
-    // close(server_socket);
+    char buffer[1024];
+    recv(client_socket, buffer, 1024, 0);
+    printf("%s\n", buffer);
+    printf("1\n"); 
+    server_example_3(client_socket, server_socket); 
+    close(client_socket);
+    close(server_socket);
     return 0;
 
 }
+
 
 int main(int argc, char *argv[])
 {
