@@ -7,11 +7,11 @@
 #include <unistd.h>
 #include "Md5.c"  // Feel free to include any other .c files that you need in the 'Server Domain'.
 #define PORT 9999
-int server_example_3(client_socket, server_socket){
+int download(int client_socket, int server_socket, char source_path[]){
     FILE *fptr;
     int chunk_size = 1000;
     char file_chunk[chunk_size];
-    char source_path[] = "Remote Directory/server_file.txt";
+    // char source_path[] = "Remote Directory/server_file.txt";
     fptr = fopen(source_path,"rb");  // Open a file in read-binary mode.
     fseek(fptr, 0L, SEEK_END);  // Sets the pointer at the end of the file.
     int file_size = ftell(fptr);  // Get file size.
@@ -91,10 +91,19 @@ int start_server()
 
     ///////////// Start sending and receiving process //////////////
     char buffer[1024];
+    // printf("1\n"); 
+    // while (1){
+        
+    //     recv(client_socket, buffer, 1024, 0);
+    //     printf("%s", buffer); 
+    //     if (strncmp(buffer, "exit", 4)){
+
+    //         break; 
+    //     }
+        
+    // }
     recv(client_socket, buffer, 1024, 0);
-    printf("%s\n", buffer);
-    printf("1\n"); 
-    server_example_3(client_socket, server_socket); 
+    download(client_socket, server_socket, "Remote Directory/server_file.txt"); 
     close(client_socket);
     close(server_socket);
     return 0;
