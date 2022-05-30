@@ -40,6 +40,37 @@ int client_example_3(client_socket){
 //        printf("Client: file_chunk data is:\n%s\n\n", file_chunk);
     }
 }
+void readFile(FILE *input_file) {
+    FILE *input_file = fopen("user_commands.txt", "r");
+    // char line[500];
+    char line = "download";
+    //reads the file line by line
+    // while (fgets(line, sizeof(line), input_file)) {
+        //extracts first token in line (i.e. the command)
+        char *token = strtok(line, " ");
+        //send different message for each command 
+        if (token = "append") {
+            //send and receive an entire file
+            //send_append(client_socket, file)
+        }
+        else if (token = "upload") {
+            //send_upload(client_socket, file)
+        }
+        else if (token = "download") {
+            //send_download(client_socket, file)
+        }
+        else if (token = "delete") {
+            //send_delete(client_socket, file)
+        }
+        else if (token = "syncheck") {
+            //send_append(client_socket, file)
+        }
+        else if (token = "quit") {
+            //quit
+        }
+    // }
+}
+
 int start_client(char inputFile[], char ipAddress[])
 {
     int client_socket;
@@ -70,10 +101,14 @@ int start_client(char inputFile[], char ipAddress[])
     char message[] = "download server_file.txt"; 
     send(client_socket, message, strlen(message), 0);
     client_example_3(client_socket);
+
+    FILE *input_file = fopen("user_commands.txt", "r");
+    readFile(input_file); 
     close(client_socket);
     
     return 0;
 }
+
 
 //upload file from local directory to remote directory
 void upload(char file) {
