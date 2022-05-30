@@ -62,6 +62,7 @@ int download(int client_socket, char destination_path[]){
     }
 }
 void readFile(FILE *input_file) {
+
      FILE *input_file = fopen("user_commands.txt", "r");
      // char line[500];
      char line = "download";
@@ -94,6 +95,39 @@ void readFile(FILE *input_file) {
      // }
  }
 int start_client(char const* const fileName, char ipAddress[])
+
+    FILE *input_file = fopen("user_commands.txt", "r");
+    // char line[500];
+    char line = "download";
+    //reads the file line by line
+    // while (fgets(line, sizeof(line), input_file)) {
+        //extracts first token in line (i.e. the command)
+        char *token = strtok(line, " ");
+        //send different message for each command 
+        if (strcmp(token, "append")) {
+            //send and receive an entire file
+            //send_append(client_socket, file)
+        }
+        else if (strcmp(token, "upload")) {
+            //send_upload(client_socket, file)
+        }
+        else if (strcmp(token, "download")) {
+            //send_download(client_socket, file)
+        }
+        else if (strcmp(token, "delete")) {
+            //send_delete(client_socket, file)
+        }
+        else if (strcmp(token, "syncheck")) {
+            //send_append(client_socket, file)
+        }
+        else if (strcmp(token, "quit")) {
+            //quit
+        }
+    // }
+}
+
+int start_client(char inputFile[], char ipAddress[])
+
 {
     int client_socket;
     struct sockaddr_in serv_addr;
@@ -103,7 +137,7 @@ int start_client(char const* const fileName, char ipAddress[])
         printf("\n Socket creation error \n");
         return -1;
     }
-
+    
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(PORT);
 
@@ -122,13 +156,45 @@ int start_client(char const* const fileName, char ipAddress[])
     ///////////// Start sending and receiving process //////////////
     char message[] = "download server_file.txt"; 
     send(client_socket, message, strlen(message), 0);
+
     download(client_socket, "Local Directory/client_file.txt");
+
+    client_example_3(client_socket);
+
+    FILE *input_file = fopen("user_commands.txt", "r");
+    readFile(input_file); 
+
     close(client_socket);
     FILE *input_file = fopen(fileName, "r");
     readFile(input_file);
     
 
 
+    return 0;
+}
+
+
+//upload file from local directory to remote directory
+void upload(char file) {
+    int err,n;
+    unsigned char buffer[4096];
+    // FILE *file;
+    //if file exists, open file and read file
+    if (file = fopen(file, "r")) {
+        //TODO: open remote directory??
+        //write file from local to remote
+        while (1) {
+            err = read(file, buffer, 4096);
+            //file is not found
+            if (err = -1) {
+                //print error message
+                print("File %s could not be uploaded successfully", file);
+            }
+            //write file to the remote directory
+            err = write("Remote Directory", buffer, n);
+        }
+
+    }
 }
 
 int main(int argc, char *argv[])
@@ -139,8 +205,12 @@ int main(int argc, char *argv[])
 	printf("My server IP address: %s\n", argv[2]);
 	md5_print();
 	printf("-----------\n");
+
     char const* const fileName = "user_command.txt";
 	start_client(fileName, argv[2]); 
+
+	start_client(argv[1], argv[2]);
+
 	exit(0);
 	return 0;
 }

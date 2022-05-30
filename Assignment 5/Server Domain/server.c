@@ -88,7 +88,7 @@ int start_server()
         exit(EXIT_FAILURE);
     }
 
-
+    
     ///////////// Start sending and receiving process //////////////
     char buffer[1024];
     recv(client_socket, buffer, 1024, 0);
