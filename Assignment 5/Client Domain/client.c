@@ -7,9 +7,9 @@
 #include <stdlib.h>
 #include "Md5.c"  // Feel free to include any other .c files that you need in the 'Client Domain'.
 #define PORT 9999
-int client_example_3(client_socket){
+int download(int client_socket, char destination_path[]){
     int received_size;
-    char destination_path[] = "Local Directory/client_file.txt";  // Note how we don't have the original file name.
+    // char destination_path[] = "Local Directory/client_file.txt";  // Note how we don't have the original file name.
     int chunk_size = 1000;
     char file_chunk[chunk_size];
 //    int chunk_counter = 0;
@@ -40,7 +40,7 @@ int client_example_3(client_socket){
 //        printf("Client: file_chunk data is:\n%s\n\n", file_chunk);
     }
 }
-int start_client(char inputFile[], char ipAddress[])
+int start_client(char const* const fileName, char ipAddress[])
 {
     int client_socket;
     struct sockaddr_in serv_addr;
@@ -69,10 +69,20 @@ int start_client(char inputFile[], char ipAddress[])
     ///////////// Start sending and receiving process //////////////
     char message[] = "download server_file.txt"; 
     send(client_socket, message, strlen(message), 0);
-    client_example_3(client_socket);
+    download(client_socket, "Local Directory/client_file.txt");
+   
+    // FILE* file = fopen(fileName, "r"); 
+    // char line[256];
+
+    // while (fgets(line, sizeof(line), file)) {
+
+    //     printf("%s\n", line); 
+    //     // send(client_socket, line, strlen(line), 0);
+    // }
+
+    // fclose(file);
     close(client_socket);
     
-    return 0;
 
 
 }
@@ -85,7 +95,8 @@ int main(int argc, char *argv[])
 	printf("My server IP address: %s\n", argv[2]);
 	md5_print();
 	printf("-----------\n");
-	start_client(argv[1], argv[2]); 
+    char const* const fileName = "user_command.txt";
+	start_client(fileName, argv[2]); 
 	exit(0);
 	return 0;
 }
