@@ -87,11 +87,13 @@ int delete(int client_socket, int server_socket, char destination_path[]){
             //remove file from the directory
             // strcat(destination_path, file);
             remove(destination_path) == 0;
-            printf("File deleted successfully.");
+            send(client_socket, "1", 1, 0);
+            // printf("File deleted successfully.");
             fclose(file);
         }
         else {
-            printf("File %s could not be found in remote directory.", destination_path);
+            send(client_socket, "0", 1, 0); 
+            // printf("File %s could not be found in remote directory.", destination_path);
         } 
 }
 int start_server()
@@ -141,8 +143,8 @@ int start_server()
     char buffer[1024];
     recv(client_socket, buffer, 1024, 0);
     // upload(client_socket, server_socket, "Remote Directory/client_file.txt");
-    // download(client_socket, server_socket, "Remote Directory/server_file.txt"); 
-    delete (client_socket, server_socket, "Remote Directory/client_file.txt");
+    download(client_socket, server_socket, "Remote Directory/server_file.txt"); 
+    // delete (client_socket, server_socket, "Remote Directory/client_file.txt");
     close(client_socket);
     close(server_socket);
     return 0;

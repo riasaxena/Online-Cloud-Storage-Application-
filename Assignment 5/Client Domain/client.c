@@ -82,6 +82,10 @@ int download(int client_socket, char destination_path[]){
 //        printf("Client: file_chunk data is:\n%s\n\n", file_chunk);
     }
 }
+int delete(int client_socket, char file_name[]){
+    char buffer [1024]; 
+    recv(client_socket, buffer, 1024, 0); 
+}
 void readFile(const char * filename, int client_socket) {
     
     FILE *input_file = fopen(filename, "r");
@@ -90,10 +94,9 @@ void readFile(const char * filename, int client_socket) {
     // char line = "download";
      //reads the file line by line
     while (fgets(line, sizeof(line), input_file)) {
-        strcat(line, " ");  
+        strcat(line, " ");
         char *token;
         printf("%s\n", line); 
-        
         token = strtok(line, " ");
         if (strcmp("pause", token) == 0){
         //  as discussed before, your application should be able to handle multiple users at 
@@ -117,7 +120,7 @@ void readFile(const char * filename, int client_socket) {
         // <file_name> could not be found in local directory.”. Otherwise, the application uploads the file from 
         // the user’s local folder to the remote folder via a TCP socket. Then the application prints a success 
         // message that indicates the file size as shown below. 
- 
+        
             
         }
         else if (strcmp("download", token) == 0){
@@ -126,7 +129,7 @@ void readFile(const char * filename, int client_socket) {
         // application  prints  “File  <file_name>  could  not  be  found  in  remote  directory.”.  Otherwise,  the 
         // application  downloads  the  file  via  a  TCP  socket  from  the  user’s  remote  directory  to  the  local 
         // directory. Then the application prints a success message that indicates the file size as shown below.  
- 
+            download(client_socket, "Local Directory/server_file.txt");
         }
          else if (strcmp("delete", token) == 0){
         // the user can type “delete <file_name>” command to delete <file_name> on the remote 
@@ -144,6 +147,7 @@ void readFile(const char * filename, int client_socket) {
         // application (but not the server). To quit the server, you should do “ctrl+c” on the server terminal 
         // which  would  cause  the  server  to  close  all  active  client  sockets  as  well  as  the  server  socket,  then 
         // terminate the server application. 
+            close(client_socket);
         }
 
 
@@ -176,12 +180,12 @@ int start_client(char const* const fileName, char ipAddress[])
     }
 
     ///////////// Start sending and receiving process //////////////
-    char message[] = "download server_file.txt"; 
-    send(client_socket, message, strlen(message), 0);
+    // char message[] = "download server_file.txt"; 
+    // send(client_socket, message, strlen(message), 0);
     // upload(client_socket, "Local Directory/client_file.txt");
     // download(client_socket, "Local Directory/server_file.txt");
-   
-    close(client_socket);
+    readFile("user_command.txt", client_socket);
+    
     
 
 
