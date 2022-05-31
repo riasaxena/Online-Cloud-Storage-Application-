@@ -7,27 +7,48 @@
 #include <stdlib.h>
 #include "Md5.c"  // Feel free to include any other .c files that you need in the 'Client Domain'.
 #define PORT 9999
-// void upload(char file) {
-//      int err,n;
-//      unsigned char buffer[4096];
-//      // FILE *file;
-//      //if file exists, open file and read file
-//      if (file = fopen(file, "r")) {
-//          //TODO: open remote directory??
-//          //write file from local to remote
-//          while (1) {
-//              err = read(file, buffer, 4096);
-//              //file is not found
-//              if (err = -1) {
-//                  //print error message
-//                  printf("File %s could not be uploaded successfully", file);
-//              }
-//              //write file to the remote directory
-//              err = write("Remote Directory", buffer, n);
-//          }
+int upload(int client_socket, char source_path[]) {
+    char buffer[1024];
+    recv(client_socket, buffer, 1024, 0 );
+    FILE *fptr;
+    int chunk_size = 1000;
+    char file_chunk[chunk_size];
+    // char source_path[] = "Remote Directory/server_file.txt";
+    fptr = fopen(source_path,"rb");  // Open a file in read-binary mode.
+    fseek(fptr, 0L, SEEK_END);  // Sets the pointer at the end of the file.
+    int file_size = ftell(fptr);  // Get file size.
+    // printf("Server: file size = %i bytes\n", file_size);
+    fseek(fptr, 0L, SEEK_SET);  // Sets the pointer back to the beginning of the file.
 
-//      }
-//  }
+    int total_bytes = 0;  // Keep track of how many bytes we read so far.
+    int current_chunk_size;  // Keep track of how many bytes we were able to read from file (helpful for the last chunk).
+    ssize_t sent_bytes;
+
+    while (total_bytes < file_size){
+        // Clean the memory of previous bytes.
+        // Both 'bzero' and 'memset' works fine.
+        bzero(file_chunk, chunk_size);
+    //        memset(file_chunk, '\0', chunk_size);
+
+        // Read file bytes from file.
+        current_chunk_size = fread(&file_chunk, sizeof(char), chunk_size, fptr);
+
+        // Sending a chunk of file to the socket.
+        sent_bytes = send(client_socket, &file_chunk, current_chunk_size, 0);
+
+        // Keep track of how many bytes we read/sent so far.
+    //        total_bytes = total_bytes + current_chunk_size;
+        total_bytes = total_bytes + sent_bytes;
+
+        // printf("Server: sent to client %i bytes. Total bytes sent so far = %i.\n", sent_bytes, total_bytes);
+
+    }
+    printf("%d bytes uploaded successfully.\n", total_bytes); 
+    // close(client_socket);
+    // close(server_socket);
+    fclose(fptr);
+    return 0;
+ }
 int download(int client_socket, char destination_path[]){
     int received_size;
     // char destination_path[] = "Local Directory/client_file.txt";  // Note how we don't have the original file name.
@@ -47,12 +68,12 @@ int download(int client_socket, char destination_path[]){
 
         // Receiving bytes from the socket.
         received_size = recv(client_socket, file_chunk, chunk_size, 0);
-        printf("Client: received %i bytes from server.\n", received_size);
+        // printf("Client: received %i bytes from server.\n", received_size);
 
         // The server has closed the connection.
         // Note: the server will only close the connection when the application terminates.
         if (received_size == 0){
-            close(client_socket);
+            // close(client_socket);
             fclose(fptr);
             break;
         }
@@ -87,9 +108,11 @@ void readFile(const char * filename, int client_socket) {
     // char line = "download";
      //reads the file line by line
     while (fgets(line, sizeof(line), input_file)) {
+        strcat(line, " ");  
         char *token;
+        printf("%s\n", line); 
+        
         token = strtok(line, " ");
-        send(client_socket, token, strlen(token), 0);
         if (strcmp("pause", token) == 0){
         //  as discussed before, your application should be able to handle multiple users at 
         // the same time. Since the user behavior is read from a file instead of taking user input in real-time, 
@@ -112,6 +135,18 @@ void readFile(const char * filename, int client_socket) {
         // <file_name> could not be found in local directory.”. Otherwise, the application uploads the file from 
         // the user’s local folder to the remote folder via a TCP socket. Then the application prints a success 
         // message that indicates the file size as shown below. 
+            token = strtok (NULL, " ");
+            char path[100];
+            strcpy(path, "Local Directory/"); 
+            strcat(path, token);
+            if (access( path, F_OK ) != -1){
+                send(client_socket, line, strlen(line), 0);
+                // printf("here"); 
+                upload(client_socket, path);
+            }else{
+                printf("File [%s] could not be found in local directory.\n", token); 
+            }
+            
  
             
         }
@@ -121,9 +156,19 @@ void readFile(const char * filename, int client_socket) {
         // application  prints  “File  <file_name>  could  not  be  found  in  remote  directory.”.  Otherwise,  the 
         // application  downloads  the  file  via  a  TCP  socket  from  the  user’s  remote  directory  to  the  local 
         // directory. Then the application prints a success message that indicates the file size as shown below.  
-
-
-            download(client_socket, "Local Directory/client_file.txt");
+            send(client_socket, line, strlen(line), 0);
+            token = strtok (NULL, " ");
+            char path[100];
+            strcpy(path, "Local Directory/"); 
+            strcat(path, token);
+            if (access( path, F_OK ) != -1){
+                send(client_socket, line, strlen(line), 0);
+                // printf("here"); 
+                upload(client_socket, path);
+            }else{
+                printf("File [%s] could not be found in local directory.\n", token); 
+            }
+            download(client_socket, path);
  
         }
          else if (strcmp("delete", token) == 0){
@@ -180,18 +225,18 @@ int start_client(char const* const fileName, char ipAddress[])
     readFile("user_command.txt", client_socket); 
     close(client_socket);
     
-
-
+    return 0; 
 }
 
 int main(int argc, char *argv[])
 {
 
-	printf("I am the client.\n");
-	printf("Input file name: %s\n", argv[1]);
-	printf("My server IP address: %s\n", argv[2]);
-	md5_print();
-	printf("-----------\n");
+	// printf("I am the client.\n");
+	// printf("Input file name: %s\n", argv[1]);
+	// printf("My server IP address: %s\n", argv[2]);
+	// md5_print();
+	// printf("-----------\n");
+    printf("Welcome to ICS53 Online Cloud Storage.\n"); 
     char const* const fileName = "user_command.txt";
 	start_client(fileName, argv[2]); 
 	exit(0);

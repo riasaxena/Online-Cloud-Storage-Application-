@@ -7,6 +7,41 @@
 #include <unistd.h>
 #include "Md5.c"  // Feel free to include any other .c files that you need in the 'Server Domain'.
 #define PORT 9999
+int upload(int client_socket, int server_socket, char destination_path[]){
+    send(client_socket, "ready", 5, 0); 
+    int received_size;
+    // char destination_path[] = "Local Directory/client_file.txt";  // Note how we don't have the original file name.
+    int chunk_size = 1000;
+    char file_chunk[chunk_size];
+//    int chunk_counter = 0;
+
+    FILE *fptr;
+
+    // Opening a new file in write-binary mode to write the received file bytes into the disk using fptr.
+    fptr = fopen(destination_path,"wb");
+
+    // Keep receiving bytes until we receive the whole file.
+    while (1){
+        bzero(file_chunk, chunk_size);
+//        memset(&file_chunk, 0, chunk_size);
+
+        // Receiving bytes from the socket.
+        received_size = recv(client_socket, file_chunk, chunk_size, 0);
+        // printf("Client: received %i bytes from server.\n", received_size);
+
+        // The server has closed the connection.
+        // Note: the server will only close the connection when the application terminates.
+        if (received_size == 0){
+            close(client_socket);
+            fclose(fptr);
+            break;
+        }
+        // Writing the received bytes into disk.
+        fwrite(&file_chunk, sizeof(char), received_size, fptr);
+//        printf("Client: file_chunk data is:\n%s\n\n", file_chunk);
+    }
+}
+
 int download(int client_socket, int server_socket, char source_path[]){
     FILE *fptr;
     int chunk_size = 1000;
@@ -15,7 +50,7 @@ int download(int client_socket, int server_socket, char source_path[]){
     fptr = fopen(source_path,"rb");  // Open a file in read-binary mode.
     fseek(fptr, 0L, SEEK_END);  // Sets the pointer at the end of the file.
     int file_size = ftell(fptr);  // Get file size.
-    printf("Server: file size = %i bytes\n", file_size);
+    // printf("Server: file size = %i bytes\n", file_size);
     fseek(fptr, 0L, SEEK_SET);  // Sets the pointer back to the beginning of the file.
 
     int total_bytes = 0;  // Keep track of how many bytes we read so far.
@@ -38,7 +73,7 @@ int download(int client_socket, int server_socket, char source_path[]){
 //        total_bytes = total_bytes + current_chunk_size;
         total_bytes = total_bytes + sent_bytes;
 
-        printf("Server: sent to client %i bytes. Total bytes sent so far = %i.\n", sent_bytes, total_bytes);
+        // printf("Server: sent to client %i bytes. Total bytes sent so far = %i.\n", sent_bytes, total_bytes);
 
     }
     // close(client_socket);
@@ -110,8 +145,22 @@ int start_server()
     ///////////// Start sending and receiving process //////////////
     char buffer[1024];
     recv(client_socket, buffer, 1024, 0);
-    if (strncmp(buffer, "download", 8) == 0){
-        download(client_socket, server_socket, "Remote Directory/server_file.txt"); 
+    // printf("%s\n", buffer); 
+    char *token;
+    token = strtok(buffer, " ");
+    if (strcmp(token, "download") == 0){
+        token = strtok (NULL, " ");
+        char path[100];
+        strcpy(path, "Remote Directory/"); 
+        strcat(path, token);
+        download(client_socket, server_socket, path); 
+    }
+    else if (strcmp(token, "upload") == 0){
+        token = strtok (NULL, " ");
+        char path[100];
+        strcpy(path, "Remote Directory/"); 
+        strcat(path, token);
+        upload(client_socket, server_socket, path); 
     }
 
     else if (strncmp(buffer, "delete", 8) == 0){
