@@ -46,6 +46,24 @@ int download(int client_socket, int server_socket, char source_path[]){
     fclose(fptr);
     return 0;
 }
+
+int delete(int client_socket, int server_socket, char destination_path[]){
+    FILE *file;
+    //open and only read the folder 
+        if (file = fopen(destination_path, "r")) {
+            //remove file from the directory
+            // strcat(destination_path, file);
+            remove(destination_path) == 0;
+            printf("File deleted successfully.");
+            fclose(file);
+        }
+        else {
+            printf("File %s could not be found in remote directory.", destination_path);
+        } 
+        close(client_socket);
+        close(server_socket);
+}
+
 int start_server()
 {
     int client_socket, server_socket;
@@ -95,13 +113,16 @@ int start_server()
     if (strncmp(buffer, "download", 8) == 0){
         download(client_socket, server_socket, "Remote Directory/server_file.txt"); 
     }
+
+    else if (strncmp(buffer, "delete", 8) == 0){
+        delete(client_socket, server_socket, "Remote Directory/hello.txt"); 
+    }
     
     close(client_socket);
     close(server_socket);
     return 0;
 
 }
-
 
 int main(int argc, char *argv[])
 {
