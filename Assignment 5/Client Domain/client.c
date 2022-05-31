@@ -82,6 +82,24 @@ int download(int client_socket, char destination_path[]){
 //        printf("Client: file_chunk data is:\n%s\n\n", file_chunk);
     }
 }
+
+//  the user can type “delete <file_name>” command to delete <file_name> on the remote
+// directory. If the file doesn’t exist in the remote directory on the server, the application prints “File
+// <file_name> could not be found in remote directory.”. Otherwise, the server deletes the file from
+// the remote directory and the client terminal prints a success message. 
+int delete(int client_socket, char destination_path[]){
+    FILE *file;
+
+    if (file = fopen(destination_path, "r")) {
+        //remove file from the directory
+        // strcat(destination_path, file);
+        if (remove(destination_path) == 0) {
+            close(client_socket);
+            fclose(file);
+        }
+    }
+}
+
 void readFile(const char * filename, int client_socket) {
     
     FILE *input_file = fopen(filename, "r");
@@ -158,7 +176,7 @@ void readFile(const char * filename, int client_socket) {
         // directory. If the file doesn’t exist in the remote directory on the server, the application prints “File 
         // <file_name> could not be found in remote directory.”. Otherwise, the server deletes the file from 
         // the remote directory and the client terminal prints a success message.  
-
+            delete(client_socket, "Remote Directory");
          }
         else if (strcmp("syncheck", token) == 0){
         // the  user  can  type  “syncheck  <file_name>”  command  to  get  a  short  report  about 
