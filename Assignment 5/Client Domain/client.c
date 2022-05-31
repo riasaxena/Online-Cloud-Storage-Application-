@@ -73,7 +73,7 @@ int download(int client_socket, char destination_path[]){
         // The server has closed the connection.
         // Note: the server will only close the connection when the application terminates.
         if (received_size == 0){
-            // close(client_socket);
+            close(client_socket);
             fclose(fptr);
             break;
         }
@@ -82,24 +82,6 @@ int download(int client_socket, char destination_path[]){
 //        printf("Client: file_chunk data is:\n%s\n\n", file_chunk);
     }
 }
-
-//  the user can type “delete <file_name>” command to delete <file_name> on the remote
-// directory. If the file doesn’t exist in the remote directory on the server, the application prints “File
-// <file_name> could not be found in remote directory.”. Otherwise, the server deletes the file from
-// the remote directory and the client terminal prints a success message. 
-int delete(int client_socket, char destination_path[]){
-    FILE *file;
-
-    if (file = fopen(destination_path, "r")) {
-        //remove file from the directory
-        // strcat(destination_path, file);
-        if (remove(destination_path) == 0) {
-            close(client_socket);
-            fclose(file);
-        }
-    }
-}
-
 void readFile(const char * filename, int client_socket) {
     
     FILE *input_file = fopen(filename, "r");
@@ -135,18 +117,6 @@ void readFile(const char * filename, int client_socket) {
         // <file_name> could not be found in local directory.”. Otherwise, the application uploads the file from 
         // the user’s local folder to the remote folder via a TCP socket. Then the application prints a success 
         // message that indicates the file size as shown below. 
-            token = strtok (NULL, " ");
-            char path[100];
-            strcpy(path, "Local Directory/"); 
-            strcat(path, token);
-            if (access( path, F_OK ) != -1){
-                send(client_socket, line, strlen(line), 0);
-                // printf("here"); 
-                upload(client_socket, path);
-            }else{
-                printf("File [%s] could not be found in local directory.\n", token); 
-            }
-            
  
             
         }
@@ -156,19 +126,6 @@ void readFile(const char * filename, int client_socket) {
         // application  prints  “File  <file_name>  could  not  be  found  in  remote  directory.”.  Otherwise,  the 
         // application  downloads  the  file  via  a  TCP  socket  from  the  user’s  remote  directory  to  the  local 
         // directory. Then the application prints a success message that indicates the file size as shown below.  
-            send(client_socket, line, strlen(line), 0);
-            token = strtok (NULL, " ");
-            char path[100];
-            strcpy(path, "Local Directory/"); 
-            strcat(path, token);
-            if (access( path, F_OK ) != -1){
-                send(client_socket, line, strlen(line), 0);
-                // printf("here"); 
-                upload(client_socket, path);
-            }else{
-                printf("File [%s] could not be found in local directory.\n", token); 
-            }
-            download(client_socket, path);
  
         }
          else if (strcmp("delete", token) == 0){
@@ -176,8 +133,8 @@ void readFile(const char * filename, int client_socket) {
         // directory. If the file doesn’t exist in the remote directory on the server, the application prints “File 
         // <file_name> could not be found in remote directory.”. Otherwise, the server deletes the file from 
         // the remote directory and the client terminal prints a success message.  
-            delete(client_socket, "Remote Directory");
-         }
+            ; 
+        }
         else if (strcmp("syncheck", token) == 0){
         // the  user  can  type  “syncheck  <file_name>”  command  to  get  a  short  report  about 
         // “file_name”, whether on the local or remote directory.  
@@ -219,13 +176,15 @@ int start_client(char const* const fileName, char ipAddress[])
     }
 
     ///////////// Start sending and receiving process //////////////
-    // char message[] = "download server_file.txt"; 
-    // send(client_socket, message, strlen(message), 0);
-    // download(client_socket, "Local Directory/client_file.txt");
-    readFile("user_command.txt", client_socket); 
+    char message[] = "download server_file.txt"; 
+    send(client_socket, message, strlen(message), 0);
+    // upload(client_socket, "Local Directory/client_file.txt");
+    // download(client_socket, "Local Directory/server_file.txt");
+   
     close(client_socket);
     
-    return 0; 
+
+
 }
 
 int main(int argc, char *argv[])
@@ -236,7 +195,6 @@ int main(int argc, char *argv[])
 	// printf("My server IP address: %s\n", argv[2]);
 	// md5_print();
 	// printf("-----------\n");
-    printf("Welcome to ICS53 Online Cloud Storage.\n"); 
     char const* const fileName = "user_command.txt";
 	start_client(fileName, argv[2]); 
 	exit(0);

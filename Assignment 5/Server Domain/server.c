@@ -41,7 +41,6 @@ int upload(int client_socket, int server_socket, char destination_path[]){
 //        printf("Client: file_chunk data is:\n%s\n\n", file_chunk);
     }
 }
-
 int download(int client_socket, int server_socket, char source_path[]){
     FILE *fptr;
     int chunk_size = 1000;
@@ -81,7 +80,6 @@ int download(int client_socket, int server_socket, char source_path[]){
     fclose(fptr);
     return 0;
 }
-
 int delete(int client_socket, int server_socket, char destination_path[]){
     FILE *file;
     //open and only read the folder 
@@ -95,10 +93,7 @@ int delete(int client_socket, int server_socket, char destination_path[]){
         else {
             printf("File %s could not be found in remote directory.", destination_path);
         } 
-        close(client_socket);
-        close(server_socket);
 }
-
 int start_server()
 {
     int client_socket, server_socket;
@@ -145,41 +140,23 @@ int start_server()
     ///////////// Start sending and receiving process //////////////
     char buffer[1024];
     recv(client_socket, buffer, 1024, 0);
-    // printf("%s\n", buffer); 
-    char *token;
-    token = strtok(buffer, " ");
-    if (strcmp(token, "download") == 0){
-        token = strtok (NULL, " ");
-        char path[100];
-        strcpy(path, "Remote Directory/"); 
-        strcat(path, token);
-        download(client_socket, server_socket, path); 
-    }
-    else if (strcmp(token, "upload") == 0){
-        token = strtok (NULL, " ");
-        char path[100];
-        strcpy(path, "Remote Directory/"); 
-        strcat(path, token);
-        upload(client_socket, server_socket, path); 
-    }
-
-    else if (strncmp(buffer, "delete", 8) == 0){
-        delete(client_socket, server_socket, "Remote Directory/hello.txt"); 
-    }
-    
+    // upload(client_socket, server_socket, "Remote Directory/client_file.txt");
+    // download(client_socket, server_socket, "Remote Directory/server_file.txt"); 
+    delete (client_socket, server_socket, "Remote Directory/client_file.txt");
     close(client_socket);
     close(server_socket);
     return 0;
 
 }
 
+
 int main(int argc, char *argv[])
 {
 
-	printf("I am the server.\n");
-	printf("Server IP address: %s\n", argv[1]);
-	md5_print();
-	printf("-----------\n");
+	// printf("I am the server.\n");
+	// printf("Server IP address: %s\n", argv[1]);
+	// md5_print();
+	// printf("-----------\n");
 	start_server(); 
 	exit(0);
 	return 0;

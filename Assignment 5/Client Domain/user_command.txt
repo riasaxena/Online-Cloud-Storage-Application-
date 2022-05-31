@@ -1,1 +1,2 @@
 download server_file.txt
+quit
