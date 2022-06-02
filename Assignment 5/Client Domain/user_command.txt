@@ -1,1 +1,3 @@
-download server_file.txt
+hello my name
+whats upload
+close

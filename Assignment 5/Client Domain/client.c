@@ -114,6 +114,24 @@ int delete(int client_socket, char destination_path[]){
         }
     }
 }
+int append (int client_socket, FILE *fptr, char fileName[]){
+    char line[500]; 
+    recv(client_socket, line, sizeof(line), 0);
+    printf("%s\n", line); 
+    if (strncmp(line, "valid", 5) == 0){
+        while (1){
+            fgets(line, sizeof(line), fptr);
+            printf("Appending> %s", line); 
+            send(client_socket, line, sizeof(line),0); 
+            if (strncmp(line, "close", 5) == 0){
+                break;
+            }
+        }
+    }
+    else {
+        printf("File [%s] could not be found in remote directory.\n", fileName); 
+    }
+}
 
 int start_client(char const* const fileName, char ipAddress[])
 {
@@ -145,7 +163,8 @@ int start_client(char const* const fileName, char ipAddress[])
     // char message[] = "download server_file.txt"; 
     // send(client_socket, message, strlen(message), 0);
     // download(client_socket, "Local Directory/abx.txt", "abx.txt");
-    upload(client_socket, "Local Directory/client_file.txt", "client_file.txt");
+    // upload(client_socket, "Local Directory/client_file.txt", "client_file.txt");
+    append(client_socket, fopen("user_command.txt", "rb"), "server_file.txt"); 
     close(client_socket);
     
     return 0; 

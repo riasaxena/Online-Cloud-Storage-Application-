@@ -111,6 +111,30 @@ int delete(int client_socket, int server_socket, char destination_path[]){
         close(client_socket);
         close(server_socket);
 }
+int append(int client_socket, int server_socket, char destination_path[]){
+    FILE *fptr;
+    char line [500]; 
+    fptr = fopen(destination_path,"a");
+    int received_size;
+    if (fptr){  
+        send(client_socket, "valid", 5, 0); 
+        sleep (1);  
+        // fseek(fptr, 0L, SEEK_END); 
+        fwrite("\n", sizeof(char), strlen("\n"), fptr);
+        while (1){    
+            recv(client_socket, line, sizeof(line), 0); 
+            if (strncmp(line, "close", 5) == 0){
+                break;
+            }
+            // printf("%s", line);
+            fwrite(line, sizeof(char), strlen(line), fptr);
+        } 
+    }
+    else{
+        send(client_socket, "invalid", 7, 0); 
+    }
+
+}
 
 int start_server()
 {
@@ -159,7 +183,8 @@ int start_server()
     // char buffer[1024];
     // recv(client_socket, buffer, 1024, 0);
     // download(client_socket, server_socket, "Remote Directory/abx.txt");
-    upload(client_socket, server_socket, "Remote Directory/client_file.txt"); 
+    // upload(client_socket, server_socket, "Remote Directory/client_file.txt"); 
+    append(client_socket, server_socket, "Remote Directory/server_file.txt"); 
     close(client_socket);
     close(server_socket);
     return 0;
