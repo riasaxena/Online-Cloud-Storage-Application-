@@ -100,7 +100,6 @@ int delete(int client_socket, int server_socket, char destination_path[]){
     //open and only read the folder 
         if (file = fopen(destination_path, "r")) {
             //remove file from the directory
-            printf("here\n"); 
             remove(destination_path) == 0;
             send(client_socket,"valid", 5, 0);
             fclose(file);
@@ -142,6 +141,33 @@ int append(int client_socket, int server_socket, char destination_path[]){
         send(client_socket, "invalid", 7, 0); 
     }
 
+}
+int syncheck(int client_socket, int server_socket, char fileName[]){
+    FILE *fptr;
+    char buffer [100];
+    int file_size = 0; 
+    recv(client_socket, buffer, 100, 0); 
+    char path[100] = "Remote Directory/"; 
+    strcat(path, fileName); 
+    // printf("%s\n",path); 
+    fptr = fopen(path,"rb"); 
+    if (fptr){
+        // printf("here\n"); 
+        fseek(fptr, 0L, SEEK_END);  // Sets the pointer at the end of the file.
+        file_size = ftell(fptr);  // Get file size.
+        // printf("%d\n", file_size); 
+        fseek(fptr, 0L, SEEK_SET);
+        
+    }
+    // printf("%d\n", file_size);
+    sprintf(buffer, "%d", file_size);
+    send(client_socket, buffer, sizeof(buffer), 0);
+    if (file_size > 0) {
+        download(client_socket, server_socket, path);
+    }
+    // printf("%s", buffer); 
+   
+    
 }
 
 int start_server()
@@ -193,7 +219,8 @@ int start_server()
     // download(client_socket, server_socket, "Remote Directory/abx.txt");
     //upload(client_socket, server_socket, "Remote Directory/client_file.txt"); 
     // delete(client_socket, server_socket, "Remote Directory/client_file.txt"); 
-    append(client_socket, server_socket, "Remote Directory/server_file.txt"); 
+    // append(client_socket, server_socket, "Remote Directory/server_file.txt"); 
+    syncheck(client_socket, server_socket, "server_file.txt"); 
     close(client_socket);
     close(server_socket);
     return 0;

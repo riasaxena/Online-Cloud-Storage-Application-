@@ -122,9 +122,9 @@ int start_client_2()
     ///////////// Start sending and receiving process //////////////
 
 
-    // client_example_1(client_socket);
-//    client_example_2(client_socket);
-   client_example_3(client_socket);
+    client_example_1(client_socket);
+    client_example_2(client_socket);
+//    client_example_3(client_socket);
     return 0;
 
 
