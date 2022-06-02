@@ -8,77 +8,90 @@
 #include "Md5.c"  // Feel free to include any other .c files that you need in the 'Server Domain'.
 #define PORT 9999
 int upload(int client_socket, int server_socket, char destination_path[]){
-    send(client_socket, "ready", 5, 0); 
     int received_size;
     // char destination_path[] = "Local Directory/client_file.txt";  // Note how we don't have the original file name.
     int chunk_size = 1000;
     char file_chunk[chunk_size];
-//    int chunk_counter = 0;
-
-    FILE *fptr;
-
+    // int chunk_counter = 0;
+    char error[8];
+    recv(client_socket, error, 10, 0); 
+    // printf("%s, %d", error), strncmp(error, "valid", 5); 
     // Opening a new file in write-binary mode to write the received file bytes into the disk using fptr.
-    fptr = fopen(destination_path,"wb");
+    if (strncmp(error, "valid", 5) == 0){    
+        FILE *fptr;
+        fptr = fopen(destination_path,"wb");
 
-    // Keep receiving bytes until we receive the whole file.
-    while (1){
-        bzero(file_chunk, chunk_size);
-//        memset(&file_chunk, 0, chunk_size);
+        // Keep receiving bytes until we receive the whole file.
+        while (1){
+            bzero(file_chunk, chunk_size);
+    //        memset(&file_chunk, 0, chunk_size);
 
-        // Receiving bytes from the socket.
-        received_size = recv(client_socket, file_chunk, chunk_size, 0);
-        // printf("Client: received %i bytes from server.\n", received_size);
+            // Receiving bytes from the socket.
+            received_size = recv(client_socket, file_chunk, chunk_size, 0);
+            // chunk_counter += received_size; 
+            // printf("Client: received %i bytes from server.\n", received_size);
 
-        // The server has closed the connection.
-        // Note: the server will only close the connection when the application terminates.
-        if (received_size == 0){
-            close(client_socket);
-            fclose(fptr);
-            break;
+            // The server has closed the connection.
+            // Note: the server will only close the connection when the application terminates.
+            if (received_size == 0){
+                // printf("%d bytes uploaded successfully.\n",chunk_counter);
+                fclose(fptr);
+                break;
+            }
+            // Writing the received bytes into disk.
+            fwrite(&file_chunk, sizeof(char), received_size, fptr);
+    //        printf("Client: file_chunk data is:\n%s\n\n", file_chunk);
         }
-        // Writing the received bytes into disk.
-        fwrite(&file_chunk, sizeof(char), received_size, fptr);
-//        printf("Client: file_chunk data is:\n%s\n\n", file_chunk);
     }
+    return 0; 
 }
 
 int download(int client_socket, int server_socket, char source_path[]){
     FILE *fptr;
     int chunk_size = 1000;
     char file_chunk[chunk_size];
-    // char source_path[] = "Remote Directory/server_file.txt";
-    fptr = fopen(source_path,"rb");  // Open a file in read-binary mode.
-    fseek(fptr, 0L, SEEK_END);  // Sets the pointer at the end of the file.
-    int file_size = ftell(fptr);  // Get file size.
-    // printf("Server: file size = %i bytes\n", file_size);
-    fseek(fptr, 0L, SEEK_SET);  // Sets the pointer back to the beginning of the file.
+    fptr = fopen(source_path,"rb"); 
 
-    int total_bytes = 0;  // Keep track of how many bytes we read so far.
-    int current_chunk_size;  // Keep track of how many bytes we were able to read from file (helpful for the last chunk).
-    ssize_t sent_bytes;
+    if (fptr){
+        send(client_socket, "valid", 5, 0); 
+        sleep(1);   
+        // printf("here\n"); 
+         // Open a file in read-binary mode.
+        fseek(fptr, 0L, SEEK_END);  // Sets the pointer at the end of the file.
+        int file_size = ftell(fptr);  // Get file size.
+        // printf("Server: file size = %i bytes\n", file_size);
+        fseek(fptr, 0L, SEEK_SET);  // Sets the pointer back to the beginning of the file.
 
-    while (total_bytes < file_size){
-        // Clean the memory of previous bytes.
-        // Both 'bzero' and 'memset' works fine.
-        bzero(file_chunk, chunk_size);
-//        memset(file_chunk, '\0', chunk_size);
+        int total_bytes = 0;  // Keep track of how many bytes we read so far.
+        int current_chunk_size;  // Keep track of how many bytes we were able to read from file (helpful for the last chunk).
+        ssize_t sent_bytes;
 
-        // Read file bytes from file.
-        current_chunk_size = fread(&file_chunk, sizeof(char), chunk_size, fptr);
+        while (total_bytes < file_size){
+            // Clean the memory of previous bytes.
+            // Both 'bzero' and 'memset' works fine.
+            bzero(file_chunk, chunk_size);
+    //        memset(file_chunk, '\0', chunk_size);
 
-        // Sending a chunk of file to the socket.
-        sent_bytes = send(client_socket, &file_chunk, current_chunk_size, 0);
+            // Read file bytes from file.
+            current_chunk_size = fread(&file_chunk, sizeof(char), chunk_size, fptr);
 
-        // Keep track of how many bytes we read/sent so far.
-//        total_bytes = total_bytes + current_chunk_size;
-        total_bytes = total_bytes + sent_bytes;
+            // Sending a chunk of file to the socket.
+            sent_bytes = send(client_socket, &file_chunk, current_chunk_size, 0);
 
-        // printf("Server: sent to client %i bytes. Total bytes sent so far = %i.\n", sent_bytes, total_bytes);
+            // Keep track of how many bytes we read/sent so far.
+    //        total_bytes = total_bytes + current_chunk_size;
+            total_bytes = total_bytes + sent_bytes;
 
-    }
-    // close(client_socket);
-    // close(server_socket);
-    fclose(fptr);
+            // printf("Server: sent to client %i bytes. Total bytes sent so far = %i.\n", sent_bytes, total_bytes);
+
+        }
+        // close(client_socket);
+        // close(server_socket);
+        fclose(fptr);
+        }
+        else{
+            send (client_socket, "invalid", 7, 0); 
+        }
     return 0;
 }
 
@@ -143,30 +156,10 @@ int start_server()
 
 
     ///////////// Start sending and receiving process //////////////
-    char buffer[1024];
-    recv(client_socket, buffer, 1024, 0);
-    // printf("%s\n", buffer); 
-    char *token;
-    token = strtok(buffer, " ");
-    if (strcmp(token, "download") == 0){
-        token = strtok (NULL, " ");
-        char path[100];
-        strcpy(path, "Remote Directory/"); 
-        strcat(path, token);
-        download(client_socket, server_socket, path); 
-    }
-    else if (strcmp(token, "upload") == 0){
-        token = strtok (NULL, " ");
-        char path[100];
-        strcpy(path, "Remote Directory/"); 
-        strcat(path, token);
-        upload(client_socket, server_socket, path); 
-    }
-
-    else if (strncmp(buffer, "delete", 8) == 0){
-        delete(client_socket, server_socket, "Remote Directory/hello.txt"); 
-    }
-    
+    // char buffer[1024];
+    // recv(client_socket, buffer, 1024, 0);
+    // download(client_socket, server_socket, "Remote Directory/abx.txt");
+    upload(client_socket, server_socket, "Remote Directory/client_file.txt"); 
     close(client_socket);
     close(server_socket);
     return 0;
@@ -176,10 +169,10 @@ int start_server()
 int main(int argc, char *argv[])
 {
 
-	printf("I am the server.\n");
-	printf("Server IP address: %s\n", argv[1]);
-	md5_print();
-	printf("-----------\n");
+	// printf("I am the server.\n");
+	// printf("Server IP address: %s\n", argv[1]);
+	// md5_print();
+	// printf("-----------\n");
 	start_server(); 
 	exit(0);
 	return 0;
