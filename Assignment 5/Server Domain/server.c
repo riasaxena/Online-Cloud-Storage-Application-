@@ -100,13 +100,14 @@ int delete(int client_socket, int server_socket, char destination_path[]){
     //open and only read the folder 
         if (file = fopen(destination_path, "r")) {
             //remove file from the directory
-            // strcat(destination_path, file);
+            printf("here\n"); 
             remove(destination_path) == 0;
-            printf("File deleted successfully.");
+            send(client_socket,"valid", 5, 0);
             fclose(file);
         }
         else {
-            printf("File %s could not be found in remote directory.", destination_path);
+            send(client_socket, "invalid", 7, 0); 
+            // printf("File %s could not be found in remote directory.", destination_path);
         } 
         close(client_socket);
         close(server_socket);
@@ -122,12 +123,19 @@ int append(int client_socket, int server_socket, char destination_path[]){
         // fseek(fptr, 0L, SEEK_END); 
         fwrite("\n", sizeof(char), strlen("\n"), fptr);
         while (1){    
-            recv(client_socket, line, sizeof(line), 0); 
-            if (strncmp(line, "close", 5) == 0){
+            recv(client_socket, line, sizeof(line), 0);
+            if (strncmp(line, "pause", 5) == 0){
+                char *token;
+                token = strtok(line, " ");
+                token = strtok(NULL, " ");
+                sleep(atoi(token)); 
+            } 
+            else if (strncmp(line, "close", 5) == 0){
                 break;
             }
-            // printf("%s", line);
-            fwrite(line, sizeof(char), strlen(line), fptr);
+            else {
+                fwrite(line, sizeof(char), strlen(line), fptr);
+            }
         } 
     }
     else{
@@ -183,7 +191,8 @@ int start_server()
     // char buffer[1024];
     // recv(client_socket, buffer, 1024, 0);
     // download(client_socket, server_socket, "Remote Directory/abx.txt");
-    // upload(client_socket, server_socket, "Remote Directory/client_file.txt"); 
+    //upload(client_socket, server_socket, "Remote Directory/client_file.txt"); 
+    // delete(client_socket, server_socket, "Remote Directory/client_file.txt"); 
     append(client_socket, server_socket, "Remote Directory/server_file.txt"); 
     close(client_socket);
     close(server_socket);

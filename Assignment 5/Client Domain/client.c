@@ -102,29 +102,35 @@ int download(int client_socket, char destination_path[], char fileName[]){
 // directory. If the file doesn’t exist in the remote directory on the server, the application prints “File
 // <file_name> could not be found in remote directory.”. Otherwise, the server deletes the file from
 // the remote directory and the client terminal prints a success message. 
-int delete(int client_socket, char destination_path[]){
-    FILE *file;
-
-    if (file = fopen(destination_path, "r")) {
-        //remove file from the directory
-        // strcat(destination_path, file);
-        if (remove(destination_path) == 0) {
-            close(client_socket);
-            fclose(file);
-        }
+int delete(int client_socket, char fileName[]){
+    char error [10];
+    recv(client_socket, error, 10, 0); 
+    if (strncmp("valid", error, 5) == 0){
+        printf("File deleted successfully.\n"); 
     }
+    else{
+        printf("File %s could not be found in remote directory.\n", fileName);
+    }
+
 }
 int append (int client_socket, FILE *fptr, char fileName[]){
     char line[500]; 
-    recv(client_socket, line, sizeof(line), 0);
-    printf("%s\n", line); 
-    if (strncmp(line, "valid", 5) == 0){
+    recv(client_socket, line, sizeof(line), 0);    if (strncmp(line, "valid", 5) == 0){
         while (1){
-            fgets(line, sizeof(line), fptr);
-            printf("Appending> %s", line); 
-            send(client_socket, line, sizeof(line),0); 
-            if (strncmp(line, "close", 5) == 0){
+            fgets(line, sizeof(line), fptr);   
+            send(client_socket, line, sizeof(line),0);
+            if (strncmp(line, "pause", 5) == 0){
+                char *token;
+                token = strtok(line, " ");
+                token = strtok(NULL, " ");
+                printf("%s", token); 
+                sleep(atoi(token)); 
+            }
+            else if (strncmp(line, "close", 5) == 0){
                 break;
+            }
+            else{
+                printf("Appending> %s", line); 
             }
         }
     }
@@ -163,7 +169,8 @@ int start_client(char const* const fileName, char ipAddress[])
     // char message[] = "download server_file.txt"; 
     // send(client_socket, message, strlen(message), 0);
     // download(client_socket, "Local Directory/abx.txt", "abx.txt");
-    // upload(client_socket, "Local Directory/client_file.txt", "client_file.txt");
+    //upload(client_socket, "Local Directory/client_file.txt", "client_file.txt");
+    // delete(client_socket, "client_file.txt"); 
     append(client_socket, fopen("user_command.txt", "rb"), "server_file.txt"); 
     close(client_socket);
     
