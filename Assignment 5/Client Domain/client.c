@@ -13,9 +13,7 @@ int upload(int client_socket, char source_path[], char fileName[]) {
     char file_chunk[chunk_size];
     fptr = fopen(source_path,"rb"); 
     if (fptr){
-        send(client_socket, "valid", 5, 0); 
-        sleep(1);   
-        // printf("here\n"); 
+        send(client_socket, "valid", 5, 0);         // printf("here\n"); 
          // Open a file in read-binary mode.
         fseek(fptr, 0L, SEEK_END);  // Sets the pointer at the end of the file.
         int file_size = ftell(fptr);  // Get file size.
@@ -47,8 +45,8 @@ int upload(int client_socket, char source_path[], char fileName[]) {
         }
         // close(client_socket);
         // close(server_socket);
-        fclose(fptr);
-        printf("%d bytes uploaded successfully.\n", total_bytes); 
+            fclose(fptr);
+            printf("%d bytes uploaded successfully.\n", total_bytes); 
         }
         else{
             send (client_socket, "invalid", 7, 0); 
@@ -106,6 +104,7 @@ int download(int client_socket, char destination_path[], char fileName[]){
     if (strncmp(error, "valid", 5) == 0){    
         FILE *fptr;
         fptr = fopen(destination_path,"wb");
+        send(client_socket, "write to", 8, 0); 
 
         // Keep receiving bytes until we receive the whole file.
         while (1){
@@ -114,8 +113,9 @@ int download(int client_socket, char destination_path[], char fileName[]){
 
             // Receiving bytes from the socket.
             received_size = recv(client_socket, file_chunk, chunk_size, 0);
+             
             chunk_counter += received_size; 
-            // printf("Client: received %i bytes from server.\n", received_size);
+            printf("Client: received %i bytes from server.\n", received_size);
 
             // The server has closed the connection.
             // Note: the server will only close the connection when the application terminates.
@@ -126,6 +126,7 @@ int download(int client_socket, char destination_path[], char fileName[]){
             }
             // Writing the received bytes into disk.
             fwrite(&file_chunk, sizeof(char), received_size, fptr);
+            send(client_socket, "next one", 4, 0);
     //        printf("Client: file_chunk data is:\n%s\n\n", file_chunk);
         }
     }
@@ -230,8 +231,39 @@ int syncheck(int client_socket, char fileName[]){
 
 }
 
+void readFile(char filename[], int client_socket) {
+    FILE *input_file = fopen(filename, "r");
+    char line[500];
+    char buffer [5]; 
+    while (fgets(line, sizeof(line), input_file)) {
+        char *token;
+        char *fileName; 
+        char path[100] = "Local Directory/";
+        send(client_socket, line, sizeof(line), 0); 
+        recv(client_socket, buffer, sizeof(buffer),0); 
+        printf("s %s", buffer);
+        token = strtok(line, " ");
+        if (strcmp("quit", token) == 0){
+            printf("here\n"); 
+            break;
+        }
+        fileName = strtok(NULL, " ");
+        strcat(path, fileName); 
+        if (strcmp("append", token) == 0){
+            append(client_socket, fopen(filename, "rb"), fileName); 
+        }
+        // if (strcmp("download", token) == 0){
+        //     printf("%s\n", path); 
+        //     send(client_socket, "good", 5, 0); 
+        //     download(client_socket, "Local Directory/server_file.txt", "server_file.txt");
+        // }
+    
+        
+    }
+ }
 
-int start_client(char const* const fileName, char ipAddress[])
+
+int start_client(char fileName[], char ipAddress[])
 {
     int client_socket;
     struct sockaddr_in serv_addr;
@@ -260,12 +292,13 @@ int start_client(char const* const fileName, char ipAddress[])
     ///////////// Start sending and receiving process //////////////
     // char message[] = "download server_file.txt"; 
     // send(client_socket, message, strlen(message), 0);
-    // download(client_socket, "Local Directory/abx.txt", "abx.txt");
-    //upload(client_socket, "Local Directory/client_file.txt", "client_file.txt");
+    // download(client_socket, "Local Directory/server_file.txt", "server_file.txt");
+    // upload(client_socket, "Local Directory/client_file.txt", "client_file.txt");
     // delete(client_socket, "client_file.txt"); 
     // append(client_socket, fopen("user_command.txt", "rb"), "server_file.txt"); 
-    syncheck(client_socket, "server_file.txt");
-    compare(fopen("Local Directory/client_file.txt", "rb"), fopen("Local Directory/server_file.txt", "rb"));
+    // syncheck(client_socket, "server_file.txt");
+    // compare(fopen("Local Directory/client_file.txt", "rb"), fopen("Local Directory/server_file.txt", "rb"));    readFile("user_command.txt",client_socket);
+    readFile(fileName, client_socket); 
     close(client_socket);
     
     return 0; 
@@ -281,8 +314,7 @@ int main(int argc, char *argv[])
 	// md5_print();
 	// printf("-----------\n");
     printf("Welcome to ICS53 Online Cloud Storage.\n"); 
-    char const* const fileName = "user_command.txt";
-	start_client(fileName, argv[2]); 
+	start_client(argv[1], argv[2]); 
 	exit(0);
 	return 0;
 }

@@ -1,0 +1,3 @@
+download server_file.txt
+upload client_file.txt
+quit

@@ -1,0 +1,5 @@
+append server_file.txt
+more hello
+pause 2
+close
+quit

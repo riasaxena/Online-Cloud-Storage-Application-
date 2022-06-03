@@ -5,9 +5,27 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <sys/wait.h>
+#include <pthread.h>
 #include "Md5.c"  // Feel free to include any other .c files that you need in the 'Server Domain'.
 #define PORT 9999
-int upload(int client_socket, int server_socket, char destination_path[]){
+pthread_t threads[5];
+// pthread_t thread;
+int global_variable = 5;
+pthread_mutex_t lock;
+int server_socket;
+void INThandler(int);
+
+void  INThandler(int sig)
+{
+     char  c;
+
+     signal(sig, SIG_IGN);
+     close(server_socket);
+     exit(0); 
+}
+
+int upload(int client_socket, char destination_path[]){
     int received_size;
     // char destination_path[] = "Local Directory/client_file.txt";  // Note how we don't have the original file name.
     int chunk_size = 1000;
@@ -15,7 +33,6 @@ int upload(int client_socket, int server_socket, char destination_path[]){
     // int chunk_counter = 0;
     char error[8];
     recv(client_socket, error, 10, 0); 
-    // printf("%s, %d", error), strncmp(error, "valid", 5); 
     // Opening a new file in write-binary mode to write the received file bytes into the disk using fptr.
     if (strncmp(error, "valid", 5) == 0){    
         FILE *fptr;
@@ -46,16 +63,16 @@ int upload(int client_socket, int server_socket, char destination_path[]){
     return 0; 
 }
 
-int download(int client_socket, int server_socket, char source_path[]){
+int download(int client_socket,  char source_path[]){
     FILE *fptr;
     int chunk_size = 1000;
     char file_chunk[chunk_size];
     fptr = fopen(source_path,"rb"); 
+    char checker[8];
 
     if (fptr){
         send(client_socket, "valid", 5, 0); 
-        sleep(1);   
-        // printf("here\n"); 
+        recv(client_socket, checker, sizeof(checker), 0); 
          // Open a file in read-binary mode.
         fseek(fptr, 0L, SEEK_END);  // Sets the pointer at the end of the file.
         int file_size = ftell(fptr);  // Get file size.
@@ -67,6 +84,7 @@ int download(int client_socket, int server_socket, char source_path[]){
         ssize_t sent_bytes;
 
         while (total_bytes < file_size){
+            printf("here"); 
             // Clean the memory of previous bytes.
             // Both 'bzero' and 'memset' works fine.
             bzero(file_chunk, chunk_size);
@@ -77,13 +95,14 @@ int download(int client_socket, int server_socket, char source_path[]){
 
             // Sending a chunk of file to the socket.
             sent_bytes = send(client_socket, &file_chunk, current_chunk_size, 0);
-
+            
             // Keep track of how many bytes we read/sent so far.
     //        total_bytes = total_bytes + current_chunk_size;
             total_bytes = total_bytes + sent_bytes;
 
-            // printf("Server: sent to client %i bytes. Total bytes sent so far = %i.\n", sent_bytes, total_bytes);
-
+            printf("Server: sent to client %i bytes. Total bytes sent so far = %i.\n", sent_bytes, total_bytes);
+            recv(client_socket, checker, sizeof(checker), 0);
+            printf("%s\n", checker);
         }
         // close(client_socket);
         // close(server_socket);
@@ -95,7 +114,7 @@ int download(int client_socket, int server_socket, char source_path[]){
     return 0;
 }
 
-int delete(int client_socket, int server_socket, char destination_path[]){
+int delete(int client_socket, char destination_path[]){
     FILE *file;
     //open and only read the folder 
         if (file = fopen(destination_path, "r")) {
@@ -108,10 +127,8 @@ int delete(int client_socket, int server_socket, char destination_path[]){
             send(client_socket, "invalid", 7, 0); 
             // printf("File %s could not be found in remote directory.", destination_path);
         } 
-        close(client_socket);
-        close(server_socket);
 }
-int append(int client_socket, int server_socket, char destination_path[]){
+int append(int client_socket, char destination_path[]){
     FILE *fptr;
     char line [500]; 
     fptr = fopen(destination_path,"a");
@@ -142,7 +159,7 @@ int append(int client_socket, int server_socket, char destination_path[]){
     }
 
 }
-int syncheck(int client_socket, int server_socket, char fileName[]){
+int syncheck(int client_socket, char fileName[]){
     FILE *fptr;
     char buffer [100];
     int file_size = 0; 
@@ -163,16 +180,65 @@ int syncheck(int client_socket, int server_socket, char fileName[]){
     sprintf(buffer, "%d", file_size);
     send(client_socket, buffer, sizeof(buffer), 0);
     if (file_size > 0) {
-        download(client_socket, server_socket, path);
+        download(client_socket,  path);
     }
     // printf("%s", buffer); 
    
     
 }
+void *threadFunc(void *vargp)
+{
+    /* pthread_mutex_lock will lock the entire block of code below until the executing thread reaches pthread_mutex_unlock */
+//    int lock_success = pthread_mutex_lock(&lock);
+//    printf("lock_success = %i\n", lock_success);
 
+    /* pthread_mutex_trylock will make it optional for other threads whether or not wait for the lock to be released */
+    // int lock_status = pthread_mutex_trylock(&lock);
+    // printf("lock_status = %i\n", lock_status);
+    // while (lock_status !=0){  // Trapping the locked thread in a loop until the lock is released.
+    //     usleep(100000);  // 0.1s
+    //     lock_status = pthread_mutex_trylock(&lock);
+    // }
+    char reader[500]; 
+    char buffer[5]; 
+    int client_socket = (int)vargp;
+   
+    while (1){  // We go into an infinite loop because we don't know how many messages we are going to receive.
+        int received_size = recv(client_socket, reader, sizeof(reader), 0);
+        char *token;
+        char *fileName; 
+        char path[100] = "Remote Directory/";
+        token = strtok(reader, " ");
+        printf("%s\n", token);
+        if (received_size == 0 || strcmp("quit", token) == 0){  // Socket is closed by the other end.
+            close(client_socket);
+            break;
+        }
+    
+        fileName = strtok(NULL, " ");
+        strcat(path, fileName); 
+        send(client_socket, "hello", 5, 0); 
+        if (strcmp("append", token) == 0){
+            append(client_socket, path); 
+        }
+        // if (strcmp("download", token) == 0)
+        // {   
+        //     recv(client_socket,buffer, sizeof(buffer), 0); 
+        //     download(client_socket, "Remote Directory/server_file.txt");
+        // }
+
+    }
+    
+    // recv(client_socket, reader, sizeof(reader), 0); 
+    // printf("%s\n", reader);    
+
+    // Release the lock for the next thread.
+    // pthread_mutex_unlock(&lock);
+    return NULL;
+}
 int start_server()
 {
-    int client_socket, server_socket;
+    
     struct sockaddr_in address;
     int opt = 1;
     int addrlen = sizeof(address);
@@ -206,24 +272,41 @@ int start_server()
         perror("listen");
         exit(EXIT_FAILURE);
     }
-    client_socket = accept(server_socket, (struct sockaddr*)&address, (socklen_t*)&addrlen);
-    if (client_socket < 0) {
-        perror("accept");
-        exit(EXIT_FAILURE);
-    }
+    int client_socket;
+    // client_socket = accept(server_socket, (struct sockaddr*)&address, (socklen_t*)&addrlen);
+    // if (client_socket < 0) {
+    //     perror("accept");
+    //     exit(EXIT_FAILURE);
+    // }
 
 
     ///////////// Start sending and receiving process //////////////
     // char buffer[1024];
     // recv(client_socket, buffer, 1024, 0);
-    // download(client_socket, server_socket, "Remote Directory/abx.txt");
-    //upload(client_socket, server_socket, "Remote Directory/client_file.txt"); 
+    // download(client_socket, server_socket, "Remote Directory/server_file.txt");
+    // printf("here"); 
+    // upload(client_socket, "Remote Directory/client_file.txt"); 
     // delete(client_socket, server_socket, "Remote Directory/client_file.txt"); 
     // append(client_socket, server_socket, "Remote Directory/server_file.txt"); 
-    syncheck(client_socket, server_socket, "server_file.txt"); 
-    close(client_socket);
-    close(server_socket);
-    return 0;
+    // syncheck(client_socket, server_socket, "server_file.txt"); 
+    char line[1024];
+    // char *token;
+    signal(SIGINT, INThandler);
+    int count = 0; 
+    while(1){     
+        client_socket = accept(server_socket, (struct sockaddr*)&address, (socklen_t*)&addrlen);
+        if (client_socket < 0) {
+            perror("accept");
+            exit(EXIT_FAILURE);
+        }
+        pthread_mutex_init(&lock, NULL);
+        pthread_create(&threads[count], NULL, threadFunc, (void *)client_socket);
+        pthread_join(threads[count], NULL);
+        pthread_mutex_destroy(&lock);
+        close(client_socket);
+        count ++; 
+    }
+    
 
 }
 
@@ -235,6 +318,8 @@ int main(int argc, char *argv[])
 	// md5_print();
 	// printf("-----------\n");
 	start_server(); 
+    close(server_socket);
+    return 0;
 	exit(0);
 	return 0;
 }

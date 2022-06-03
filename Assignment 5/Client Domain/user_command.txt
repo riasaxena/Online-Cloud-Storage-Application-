@@ -1,4 +1,0 @@
-hello my name
-whats upload
-pause 5
-close

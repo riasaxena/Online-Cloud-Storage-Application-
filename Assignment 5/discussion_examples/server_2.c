@@ -138,7 +138,7 @@ int start_server_2()
 
 
     server_example_1(client_socket, server_socket);
-    server_example_2(client_socket, server_socket);
+    // server_example_2(client_socket, server_socket);
 //    server_example_3(client_socket, server_socket);
     return 0;
 

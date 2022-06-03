@@ -123,7 +123,7 @@ int start_client_2()
 
 
     client_example_1(client_socket);
-    client_example_2(client_socket);
+    // client_example_2(client_socket);
 //    client_example_3(client_socket);
     return 0;
 
