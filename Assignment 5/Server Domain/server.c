@@ -62,72 +62,6 @@ int upload(int client_socket, char destination_path[]){
     }
     return 0; 
 }
-
-int download(int client_socket,  char source_path[]){
-    FILE *fptr;
-    int chunk_size = 1000;
-    char file_chunk[chunk_size];
-    fptr = fopen(source_path,"rb"); 
-    char checker[8];
-
-    if (fptr){
-        send(client_socket, "valid", 5, 0); 
-        recv(client_socket, checker, sizeof(checker), 0); 
-         // Open a file in read-binary mode.
-        fseek(fptr, 0L, SEEK_END);  // Sets the pointer at the end of the file.
-        int file_size = ftell(fptr);  // Get file size.
-        // printf("Server: file size = %i bytes\n", file_size);
-        fseek(fptr, 0L, SEEK_SET);  // Sets the pointer back to the beginning of the file.
-
-        int total_bytes = 0;  // Keep track of how many bytes we read so far.
-        int current_chunk_size;  // Keep track of how many bytes we were able to read from file (helpful for the last chunk).
-        ssize_t sent_bytes;
-
-        while (total_bytes < file_size){
-            printf("here"); 
-            // Clean the memory of previous bytes.
-            // Both 'bzero' and 'memset' works fine.
-            bzero(file_chunk, chunk_size);
-    //        memset(file_chunk, '\0', chunk_size);
-
-            // Read file bytes from file.
-            current_chunk_size = fread(&file_chunk, sizeof(char), chunk_size, fptr);
-
-            // Sending a chunk of file to the socket.
-            sent_bytes = send(client_socket, &file_chunk, current_chunk_size, 0);
-            
-            // Keep track of how many bytes we read/sent so far.
-    //        total_bytes = total_bytes + current_chunk_size;
-            total_bytes = total_bytes + sent_bytes;
-
-            printf("Server: sent to client %i bytes. Total bytes sent so far = %i.\n", sent_bytes, total_bytes);
-            recv(client_socket, checker, sizeof(checker), 0);
-            printf("%s\n", checker);
-        }
-        // close(client_socket);
-        // close(server_socket);
-        fclose(fptr);
-        }
-        else{
-            send (client_socket, "invalid", 7, 0); 
-        }
-    return 0;
-}
-
-int delete(int client_socket, char destination_path[]){
-    FILE *file;
-    //open and only read the folder 
-        if (file = fopen(destination_path, "r")) {
-            //remove file from the directory
-            remove(destination_path) == 0;
-            send(client_socket,"valid", 5, 0);
-            fclose(file);
-        }
-        else {
-            send(client_socket, "invalid", 7, 0); 
-            // printf("File %s could not be found in remote directory.", destination_path);
-        } 
-}
 int append(int client_socket, char destination_path[]){
     FILE *fptr;
     char line [500]; 
@@ -135,7 +69,7 @@ int append(int client_socket, char destination_path[]){
     int received_size;
     if (fptr){  
         send(client_socket, "valid", 5, 0); 
-        sleep (1);  
+        // sleep (1);  
         // fseek(fptr, 0L, SEEK_END); 
         fwrite("\n", sizeof(char), strlen("\n"), fptr);
         while (1){    
@@ -150,42 +84,18 @@ int append(int client_socket, char destination_path[]){
                 break;
             }
             else {
+                printf("%s", line); 
                 fwrite(line, sizeof(char), strlen(line), fptr);
             }
         } 
+        fclose(fptr); 
     }
     else{
         send(client_socket, "invalid", 7, 0); 
     }
 
 }
-int syncheck(int client_socket, char fileName[]){
-    FILE *fptr;
-    char buffer [100];
-    int file_size = 0; 
-    recv(client_socket, buffer, 100, 0); 
-    char path[100] = "Remote Directory/"; 
-    strcat(path, fileName); 
-    // printf("%s\n",path); 
-    fptr = fopen(path,"rb"); 
-    if (fptr){
-        // printf("here\n"); 
-        fseek(fptr, 0L, SEEK_END);  // Sets the pointer at the end of the file.
-        file_size = ftell(fptr);  // Get file size.
-        // printf("%d\n", file_size); 
-        fseek(fptr, 0L, SEEK_SET);
-        
-    }
-    // printf("%d\n", file_size);
-    sprintf(buffer, "%d", file_size);
-    send(client_socket, buffer, sizeof(buffer), 0);
-    if (file_size > 0) {
-        download(client_socket,  path);
-    }
-    // printf("%s", buffer); 
-   
-    
-}
+i
 void *threadFunc(void *vargp)
 {
     /* pthread_mutex_lock will lock the entire block of code below until the executing thread reaches pthread_mutex_unlock */
@@ -209,25 +119,22 @@ void *threadFunc(void *vargp)
         char *fileName; 
         char path[100] = "Remote Directory/";
         token = strtok(reader, " ");
-        printf("%s\n", token);
-        if (received_size == 0 || strcmp("quit", token) == 0){  // Socket is closed by the other end.
-            close(client_socket);
+        printf("token: %s", token); 
+        if (strcmp("quit", token) == 0){  // Socket is closed by the other end.
+            // close(client_socket);
             break;
         }
-    
-        fileName = strtok(NULL, " ");
+        
+        fileName = strtok(NULL, "\n");
         strcat(path, fileName); 
+        // printf("%d\n", strcmp("append", token));
         send(client_socket, "hello", 5, 0); 
         if (strcmp("append", token) == 0){
             append(client_socket, path); 
         }
-        // if (strcmp("download", token) == 0)
-        // {   
-        //     recv(client_socket,buffer, sizeof(buffer), 0); 
-        //     download(client_socket, "Remote Directory/server_file.txt");
-        // }
-
+        
     }
+    close(client_socket); 
     
     // recv(client_socket, reader, sizeof(reader), 0); 
     // printf("%s\n", reader);    
@@ -273,22 +180,7 @@ int start_server()
         exit(EXIT_FAILURE);
     }
     int client_socket;
-    // client_socket = accept(server_socket, (struct sockaddr*)&address, (socklen_t*)&addrlen);
-    // if (client_socket < 0) {
-    //     perror("accept");
-    //     exit(EXIT_FAILURE);
-    // }
 
-
-    ///////////// Start sending and receiving process //////////////
-    // char buffer[1024];
-    // recv(client_socket, buffer, 1024, 0);
-    // download(client_socket, server_socket, "Remote Directory/server_file.txt");
-    // printf("here"); 
-    // upload(client_socket, "Remote Directory/client_file.txt"); 
-    // delete(client_socket, server_socket, "Remote Directory/client_file.txt"); 
-    // append(client_socket, server_socket, "Remote Directory/server_file.txt"); 
-    // syncheck(client_socket, server_socket, "server_file.txt"); 
     char line[1024];
     // char *token;
     signal(SIGINT, INThandler);
@@ -312,11 +204,6 @@ int start_server()
 
 int main(int argc, char *argv[])
 {
-
-	// printf("I am the server.\n");
-	// printf("Server IP address: %s\n", argv[1]);
-	// md5_print();
-	// printf("-----------\n");
 	start_server(); 
     close(server_socket);
     return 0;
