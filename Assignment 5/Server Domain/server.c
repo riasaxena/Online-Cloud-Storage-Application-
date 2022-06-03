@@ -95,7 +95,7 @@ int append(int client_socket, char destination_path[]){
     }
 
 }
-i
+
 void *threadFunc(void *vargp)
 {
     /* pthread_mutex_lock will lock the entire block of code below until the executing thread reaches pthread_mutex_unlock */
@@ -119,7 +119,7 @@ void *threadFunc(void *vargp)
         char *fileName; 
         char path[100] = "Remote Directory/";
         token = strtok(reader, " ");
-        printf("token: %s", token); 
+        printf("token: %s\n", token); 
         if (strcmp("quit", token) == 0){  // Socket is closed by the other end.
             // close(client_socket);
             break;
@@ -131,6 +131,9 @@ void *threadFunc(void *vargp)
         send(client_socket, "hello", 5, 0); 
         if (strcmp("append", token) == 0){
             append(client_socket, path); 
+        }
+        if (strcmp("upload", token) == 0){
+            upload(client_socket, path); 
         }
         
     }

@@ -2,4 +2,5 @@ append server_file.txt
 more hello
 what is up
 close
+upload client_file.txt
 quit

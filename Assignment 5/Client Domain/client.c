@@ -43,8 +43,6 @@ int upload(int client_socket, char source_path[], char fileName[]) {
             // printf("Server: sent to client %i bytes. Total bytes sent so far = %i.\n", sent_bytes, total_bytes);
 
         }
-        // close(client_socket);
-        // close(server_socket);
             fclose(fptr);
             printf("%d bytes uploaded successfully.\n", total_bytes); 
         }
@@ -95,7 +93,7 @@ void readFile(char filename[], int client_socket) {
         char path[100] = "Local Directory/";
         send(client_socket, line, sizeof(line), 0); 
         recv(client_socket, buffer, sizeof(buffer),0); 
-        // printf("s %s", buffer);
+        // printf("s %s", line);
         token = strtok(line, " ");
         if (strcmp("quit", token) == 0){
             //close(client_socket);
@@ -105,6 +103,9 @@ void readFile(char filename[], int client_socket) {
         strcat(path, fileName); 
         if (strcmp("append", token) == 0){
             append(client_socket, input_file, fileName); 
+        }
+        if (strcmp("upload", token) == 0){
+            upload(client_socket, path, fileName); 
         }
     
         
