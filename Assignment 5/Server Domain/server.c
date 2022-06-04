@@ -190,11 +190,18 @@ void *threadFunc(void *vargp)
         //lock status is unlocked
         if (lock_status != 0) {
             send(client_socket, "unlocked", 5, 0);
+            if (strcmp("quit", token) == 0){  // Socket is closed by the other end.
+                //close(client_socket);
+                pthread_mutex_unlock(&lock);
+                break;
+            }
             if (strcmp("append", token) == 0){
                 //lock the file
                 send(client_socket, "locked", 5, 0);
                 append(client_socket, path);
                 // pthread_mutex_unlock(&lock);
+                pthread_mutex_unlock(&lock);
+                send(client_socket, "unlocked", 5, 0);
             }
             if (strcmp("upload", token) == 0){
                 // lock_status = 0;
@@ -202,33 +209,22 @@ void *threadFunc(void *vargp)
                 send(client_socket, "unlocked", 5, 0);
                 upload(client_socket, path);
             }
-            if (strcmp("quit", token) == 0){  // Socket is closed by the other end.
-                // close(client_socket);
-                
-                break;
-        }
-        
-        if (strcmp("quit", token) == 0){  // Socket is closed by the other end.
-            break;
-        }
-        fileName = strtok(NULL, "\n");
-        strcat(path, fileName); 
-        // printf("%d\n", strcmp("append", token));
-        if (strcmp("append", token) == 0){
-            append(client_socket, path); 
-        }
-        if (strcmp("upload", token) == 0){
-            upload(client_socket, path);
-        }
-        if (strcmp("download", token) == 0){
-            download(client_socket, path);
-        }
-        if (strcmp("delete", token) == 0){
-            delete(client_socket, path);
-        }
-        if (strcmp("syncheck", token) == 0){
-            // printf("2"); 
-            syncheck(client_socket, path);
+            if (strcmp("download", token) == 0){
+                pthread_mutex_unlock(&lock);
+                send(client_socket, "unlocked", 5, 0);
+                download(client_socket, path);
+            }
+            if (strcmp("delete", token) == 0){
+                pthread_mutex_unlock(&lock);
+                send(client_socket, "unlocked", 5, 0);
+                delete(client_socket, path);
+            }
+            if (strcmp("syncheck", token) == 0){
+                pthread_mutex_unlock(&lock);
+                send(client_socket, "unlocked", 5, 0);
+                // printf("2"); 
+                syncheck(client_socket, path);
+            }
         }
     }
     close(client_socket); 

@@ -212,38 +212,27 @@ void readFile(char filename[], int client_socket) {
         //TODO: Check to make sure the file is locked or unlocked
         //Mark a file as locked or unlocked 
         //if file is unlocked: run these if statements
+
         if (buffer == "unlocked") { //status if unlocked
             if (strcmp("append", token) == 0){
                 append(client_socket, input_file, fileName); 
-                //when close command is issued
-                //then unlock the file
+                sleep(1); 
             }
             if (strcmp("upload", token) == 0){
-                // Release the lock for the next thread.
-                // pthread_mutex_unlock(&lock);
                 upload(client_socket, path, fileName); 
+                sleep(1); 
+            }
+            if (strcmp("download", token) == 0){
+                download(client_socket, path, fileName); 
+            }
+            if (strcmp("delete", token) == 0){
+                delete(client_socket, fileName); 
+            }
+            if (strcmp("syncheck", token) == 0){
+                syncheck(client_socket, fileName); 
             }
         else {
             printf("File %s is currently locked by another user.", fileName);
-        }
-
-        strcat(path, fileName); 
-        if (strcmp("append", token) == 0){
-            append(client_socket, input_file, fileName); 
-            sleep(1); 
-        }
-        if (strcmp("upload", token) == 0){
-            upload(client_socket, path, fileName); 
-            sleep(1); 
-        }
-        if (strcmp("download", token) == 0){
-            download(client_socket, path, fileName); 
-        }
-        if (strcmp("delete", token) == 0){
-            delete(client_socket, fileName); 
-        }
-        if (strcmp("syncheck", token) == 0){
-            syncheck(client_socket, fileName); 
         }
         
     
