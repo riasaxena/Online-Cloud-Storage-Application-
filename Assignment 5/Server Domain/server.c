@@ -99,43 +99,63 @@ int append(int client_socket, char destination_path[]){
 void *threadFunc(void *vargp)
 {
     /* pthread_mutex_lock will lock the entire block of code below until the executing thread reaches pthread_mutex_unlock */
-//    int lock_success = pthread_mutex_lock(&lock);
-//    printf("lock_success = %i\n", lock_success);
+    //int lock_success = pthread_mutex_lock(&lock);
+    //printf("lock_success = %i\n", lock_success);
 
     /* pthread_mutex_trylock will make it optional for other threads whether or not wait for the lock to be released */
-    // int lock_status = pthread_mutex_trylock(&lock);
-    // printf("lock_status = %i\n", lock_status);
-    // while (lock_status !=0){  // Trapping the locked thread in a loop until the lock is released.
-    //     usleep(100000);  // 0.1s
-    //     lock_status = pthread_mutex_trylock(&lock);
-    // }
+
     char reader[500]; 
     char buffer[5]; 
     int client_socket = (int)vargp;
-   
+    
     while (1){  // We go into an infinite loop because we don't know how many messages we are going to receive.
+        //TODO: Implement the locking stuff
+        int lock_status = pthread_mutex_trylock(&lock);
+        printf("lock_status = %i\n", lock_status);
+        // Trapping the locked thread in a loop until the lock is released.
+        while (lock_status !=0){ 
+            usleep(100000);  // 0.1s
+            lock_status = pthread_mutex_trylock(&lock);
+        }
+        pthread_t thread_id = pthread_self();
+
         int received_size = recv(client_socket, reader, sizeof(reader), 0);
         char *token;
         char *fileName; 
         char path[100] = "Remote Directory/";
         token = strtok(reader, " ");
         printf("token: %s\n", token); 
-        if (strcmp("quit", token) == 0){  // Socket is closed by the other end.
-            // close(client_socket);
-            break;
-        }
+        // if (strcmp("quit", token) == 0){  // Socket is closed by the other end.
+        //     // close(client_socket);
+        //     break;
+        // }
         
         fileName = strtok(NULL, "\n");
         strcat(path, fileName); 
         // printf("%d\n", strcmp("append", token));
-        send(client_socket, "hello", 5, 0); 
-        if (strcmp("append", token) == 0){
-            append(client_socket, path); 
+        // send(client_socket, "hello", 5, 0); 
+
+        //lock status is unlocked
+        if (lock_status != 0) {
+            send(client_socket, "unlocked", 5, 0);
+            if (strcmp("append", token) == 0){
+                //lock the file
+                send(client_socket, "locked", 5, 0);
+                append(client_socket, path);
+                // pthread_mutex_unlock(&lock);
+            }
+            if (strcmp("upload", token) == 0){
+                // lock_status = 0;
+                pthread_mutex_unlock(&lock);
+                send(client_socket, "unlocked", 5, 0);
+                upload(client_socket, path);
+            }
+            if (strcmp("quit", token) == 0){  // Socket is closed by the other end.
+                // close(client_socket);
+                
+                break;
         }
-        if (strcmp("upload", token) == 0){
-            upload(client_socket, path); 
         }
-        
     }
     close(client_socket); 
     
@@ -199,7 +219,7 @@ int start_server()
         pthread_join(threads[count], NULL);
         pthread_mutex_destroy(&lock);
         close(client_socket);
-        count ++; 
+        count ++;
     }
     
 
@@ -207,7 +227,7 @@ int start_server()
 
 int main(int argc, char *argv[])
 {
-	start_server(); 
+	start_server();
     close(server_socket);
     return 0;
 	exit(0);

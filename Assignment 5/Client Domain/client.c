@@ -81,12 +81,11 @@ int append (int client_socket, FILE *fptr, char fileName[]){
     }
 }
 
-
-
 void readFile(char filename[], int client_socket) {
     FILE *input_file = fopen(filename, "r");
     char line[500];
     char buffer [5]; 
+    pthread_mutex_t mutexLock = pthread_mutex_init(&lock, NULL);
     while (fgets(line, sizeof(line), input_file)) {
         char *token;
         char *fileName; 
@@ -99,16 +98,28 @@ void readFile(char filename[], int client_socket) {
             //close(client_socket);
             break;
         }
-        fileName = strtok(NULL, "\n");
-        strcat(path, fileName); 
-        if (strcmp("append", token) == 0){
-            append(client_socket, input_file, fileName); 
-        }
-        if (strcmp("upload", token) == 0){
-            upload(client_socket, path, fileName); 
-        }
-    
         
+        fileName = strtok(NULL, "\n");
+        strcat(path, fileName);
+        //TODO: Check to make sure the file is locked or unlocked
+        //Mark a file as locked or unlocked 
+        //if file is unlocked: run these if statements
+        if (buffer == "unlocked") { //status if unlocked
+            if (strcmp("append", token) == 0){
+                append(client_socket, input_file, fileName); 
+                //when close command is issued
+                //then unlock the file
+            }
+            if (strcmp("upload", token) == 0){
+                // Release the lock for the next thread.
+                // pthread_mutex_unlock(&lock);
+                upload(client_socket, path, fileName); 
+            }
+        else {
+            printf("File %s is currently locked by another user.", fileName);
+        }
+
+    
     }
  }
 

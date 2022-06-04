@@ -28,7 +28,6 @@ void *myThreadExample(void *vargp)
         lock_status = pthread_mutex_trylock(&lock);
     }
 
-
     printf("My arg is: %i\n", vargp);
     pthread_t thread_id = pthread_self();
     printf("My thread_id = %i\n", thread_id);
