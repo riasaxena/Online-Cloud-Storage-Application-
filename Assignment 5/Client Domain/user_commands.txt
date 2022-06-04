@@ -1,6 +1,10 @@
 append server_file.txt
-more hello
-what is up
+hello world
+hi
 close
 upload client_file.txt
+download server_file.txt
+delete client_file.txt
+syncheck server_file.txt
+syncheck client_file.txt
 quit

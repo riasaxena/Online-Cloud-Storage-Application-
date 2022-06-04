@@ -9,11 +9,12 @@
 #include <pthread.h>
 #include "Md5.c"  // Feel free to include any other .c files that you need in the 'Server Domain'.
 #define PORT 9999
-pthread_t threads[5];
+pthread_t threads[15];
 // pthread_t thread;
 int global_variable = 5;
 pthread_mutex_t lock;
 int server_socket;
+char junk[10];
 void INThandler(int);
 
 void  INThandler(int sig)
@@ -25,43 +26,6 @@ void  INThandler(int sig)
      exit(0); 
 }
 
-int upload(int client_socket, char destination_path[]){
-    int received_size;
-    // char destination_path[] = "Local Directory/client_file.txt";  // Note how we don't have the original file name.
-    int chunk_size = 1000;
-    char file_chunk[chunk_size];
-    // int chunk_counter = 0;
-    char error[8];
-    recv(client_socket, error, 10, 0); 
-    // Opening a new file in write-binary mode to write the received file bytes into the disk using fptr.
-    if (strncmp(error, "valid", 5) == 0){    
-        FILE *fptr;
-        fptr = fopen(destination_path,"wb");
-
-        // Keep receiving bytes until we receive the whole file.
-        while (1){
-            bzero(file_chunk, chunk_size);
-    //        memset(&file_chunk, 0, chunk_size);
-
-            // Receiving bytes from the socket.
-            received_size = recv(client_socket, file_chunk, chunk_size, 0);
-            // chunk_counter += received_size; 
-            // printf("Client: received %i bytes from server.\n", received_size);
-
-            // The server has closed the connection.
-            // Note: the server will only close the connection when the application terminates.
-            if (received_size == 0){
-                // printf("%d bytes uploaded successfully.\n",chunk_counter);
-                fclose(fptr);
-                break;
-            }
-            // Writing the received bytes into disk.
-            fwrite(&file_chunk, sizeof(char), received_size, fptr);
-    //        printf("Client: file_chunk data is:\n%s\n\n", file_chunk);
-        }
-    }
-    return 0; 
-}
 int append(int client_socket, char destination_path[]){
     FILE *fptr;
     char line [500]; 
@@ -84,7 +48,7 @@ int append(int client_socket, char destination_path[]){
                 break;
             }
             else {
-                printf("%s", line); 
+                // printf("%s", line); 
                 fwrite(line, sizeof(char), strlen(line), fptr);
             }
         } 
@@ -94,6 +58,93 @@ int append(int client_socket, char destination_path[]){
         send(client_socket, "invalid", 7, 0); 
     }
 
+}
+
+int upload(int client_socket, char destination_path[]){
+    char error[8];
+    char line[500]; 
+    recv(client_socket, error, 10, 0); 
+    // Opening a new file in write-binary mode to write the received file bytes into the disk using fptr.
+    if (strncmp(error, "valid", 5) == 0){    
+        FILE *fptr;
+        fptr = fopen(destination_path,"w");
+
+        while (1){
+            send(client_socket, "junk", sizeof("junk"), 0); 
+            recv(client_socket, line, sizeof(line), 0);
+            if (strncmp(line, "quit", 4) == 0){
+                fclose(fptr); 
+                break; 
+            }
+            fwrite(line, sizeof(char), strlen(line), fptr);
+        }
+    }
+    return 0; 
+}
+int download(int client_socket, char destination_path[]) {
+    FILE *fptr;
+    fptr = fopen(destination_path,"r"); 
+    char line[500]; 
+    if (fptr){
+        ssize_t sent_bytes;
+        int total_bytes = 0;
+        fseek(fptr, 0L, SEEK_END);  
+        int file_size = ftell(fptr); 
+        fseek(fptr, 0L, SEEK_SET);  
+        send(client_socket, "valid", 5, 0); 
+        while (fgets(line, sizeof(line), fptr)) {
+            recv(client_socket, junk, sizeof(junk),0); 
+            sent_bytes = send(client_socket, line, sizeof(line), 0); 
+        }
+        recv(client_socket, junk, sizeof(junk),0);
+        send(client_socket, "quit", 4, 0);
+        fclose(fptr);
+    }
+    else{
+        send (client_socket, "invalid", 7, 0); 
+    }
+    return 0;
+ }
+ int delete(int client_socket, char destination_path[]){
+    FILE *file;
+    //open and only read the folder 
+        if (file = fopen(destination_path, "r")) {
+            //remove file from the directory
+            remove(destination_path) == 0;
+            send(client_socket,"valid", 5, 0);
+            fclose(file);
+        }
+        else {
+            send(client_socket, "invalid", 7, 0); 
+            // printf("File %s could not be found in remote directory.", destination_path);
+        } 
+}
+
+int syncheck(int client_socket, char path[]){
+    FILE *fptr;
+    char buffer [100];
+    int file_size = 0; 
+    // printf("%s\n",path); 
+    fptr = fopen(path,"rb"); 
+    // printf("1\n"); 
+    // printf("%d, %s\n", fptr, path); 
+    if (fptr){
+        // printf("here\n"); 
+        fseek(fptr, 0L, SEEK_END);  // Sets the pointer at the end of the file.
+        file_size = ftell(fptr);  // Get file size.
+        // printf("%d\n", file_size); 
+        fseek(fptr, 0L, SEEK_SET);
+        
+    }
+    // printf("%d\n", file_size);
+    sprintf(buffer, "%d", file_size);
+    send(client_socket, buffer, sizeof(buffer), 0);
+    if (file_size > 0) {
+        download(client_socket,  path);
+    }
+    // printf("%s", buffer); 
+   
+    
 }
 
 void *threadFunc(void *vargp)
@@ -123,6 +174,7 @@ void *threadFunc(void *vargp)
         char *token;
         char *fileName; 
         char path[100] = "Remote Directory/";
+        // printf("reader: %s\n", reader); 
         token = strtok(reader, " ");
         printf("token: %s\n", token); 
         // if (strcmp("quit", token) == 0){  // Socket is closed by the other end.
@@ -155,6 +207,28 @@ void *threadFunc(void *vargp)
                 
                 break;
         }
+        
+        if (strcmp("quit", token) == 0){  // Socket is closed by the other end.
+            break;
+        }
+        fileName = strtok(NULL, "\n");
+        strcat(path, fileName); 
+        // printf("%d\n", strcmp("append", token));
+        if (strcmp("append", token) == 0){
+            append(client_socket, path); 
+        }
+        if (strcmp("upload", token) == 0){
+            upload(client_socket, path);
+        }
+        if (strcmp("download", token) == 0){
+            download(client_socket, path);
+        }
+        if (strcmp("delete", token) == 0){
+            delete(client_socket, path);
+        }
+        if (strcmp("syncheck", token) == 0){
+            // printf("2"); 
+            syncheck(client_socket, path);
         }
     }
     close(client_socket); 
@@ -166,6 +240,7 @@ void *threadFunc(void *vargp)
     // pthread_mutex_unlock(&lock);
     return NULL;
 }
+
 int start_server()
 {
     
